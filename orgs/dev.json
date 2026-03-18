@@ -1,0 +1,35 @@
+{
+  "orgName": "Salesforce",
+  "snapshot": "EASY",
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    },
+    "chatterSettings": {
+      "enableChatter": true
+    },
+    "userManagementSettings": {
+      "enableNewProfileUI": true
+    },
+    "securitySettings": {
+      "enableAdminLoginAsAnyUser": true,
+      "enableAuditFieldsInactiveOwner": true,
+      "sessionSettings": {
+        "forceRelogin": false
+      }
+    },
+    "nameSettings": {
+      "enableMiddleName": true
+    },
+    "languageSettings": {
+      "enableTranslationWorkbench": true
+    },
+    "communitiesSettings": {
+      "enableNetworksEnabled": true,
+      "enableOotbProfExtUserOpsEnable": true
+    },
+    "experienceBundleSettings": {
+      "enableExperienceBundleMetadata": true
+    }
+  }
+}
