@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Fall_2025_TR_Adjusted_Awards</fullName>
+    <columns>NAME</columns>
+    <columns>Contact__c</columns>
+    <columns>Scholarship_Name__c</columns>
+    <columns>Adj_California_Pathway_Scholarship__c</columns>
+    <columns>Adj_Catholic_High_School_Scholar__c</columns>
+    <columns>Adj_Colorado_Pathway_Scholarship__c</columns>
+    <columns>Adj_Cristo_Rey_Scholarship__c</columns>
+    <columns>Adj_Illinois_Pathway_Scholarship__c</columns>
+    <columns>Adj_Kansas_Pathway_Scholarship__c</columns>
+    <columns>Adj_Milwaukee_Area_Pathway_Scholar__c</columns>
+    <columns>Adj_Missouri_Pathway_Scholarship__c</columns>
+    <columns>Adj_Nebraska_Pathways_Scholarship__c</columns>
+    <columns>Adj_Athletic_Revision__c</columns>
+    <columns>Adj_Award_Amount__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Application_Term__c</field>
+        <operation>equals</operation>
+        <value>Fall 2025</value>
+    </filters>
+    <filters>
+        <field>Scholarship_Name__c</field>
+        <operation>equals</operation>
+        <value>UG TR Merit Scholarship 2025</value>
+    </filters>
+    <filters>
+        <field>Scholarship_Award_Adjust_Reason__c</field>
+        <operation>notEqual</operation>
+    </filters>
+    <label>Fall 2025 TR Adjusted Awards</label>
+</ListView>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>X2025_Scholarship_Data_Flips</fullName>
+    <columns>Scholarship__c</columns>
+    <columns>Scholarship_Award_Year__c</columns>
+    <columns>NAME</columns>
+    <columns>Last_Name_First_Name__c</columns>
+    <columns>Contact__c</columns>
+    <columns>Scholarship_Status__c</columns>
+    <columns>Scholarship_Amount__c</columns>
+    <columns>Scholarship_Award_Type__c</columns>
+    <columns>Scholarship_ID__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Scholarship__c</field>
+        <operation>contains</operation>
+        <value>Music Major</value>
+    </filters>
+    <filters>
+        <field>RECORDTYPE</field>
+        <operation>equals</operation>
+        <value>Scholarship_Applicant__c.Scholarship</value>
+    </filters>
+    <filters>
+        <field>Scholarship_Award_Year__c</field>
+        <operation>equals</operation>
+        <value>2627</value>
+    </filters>
+    <filters>
+        <field>Scholarship_Status__c</field>
+        <operation>notEqual</operation>
+        <value>Started App,Not Qualified</value>
+    </filters>
+    <label>2025 Scholarship Data Flips</label>
+    <sharedTo>
+        <allInternalUsers></allInternalUsers>
+    </sharedTo>
+</ListView>

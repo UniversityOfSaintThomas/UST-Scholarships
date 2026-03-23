@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Widget_Type__c</fullName>
+    <description>Choose what type of widget you want to create. Typically this will be set to custom unless you wish a
+        pre-programmed widget.</description>
+    <inlineHelpText>Choose what type of widget you want to create. Typically this will be set to custom unless you wish
+        a pre-programmed widget.</inlineHelpText>
+    <label>Widget Type</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>true</sorted>
+            <value>
+                <fullName>Application Checklist</fullName>
+                <default>false</default>
+                <label>Application Checklist</label>
+            </value>
+            <value>
+                <fullName>Application Checklist Multiple</fullName>
+                <default>false</default>
+                <label>Application Checklist Multiple</label>
+            </value>
+            <value>
+                <fullName>Application Finder</fullName>
+                <default>false</default>
+                <label>Application Finder</label>
+            </value>
+            <value>
+                <fullName>Counselor Information</fullName>
+                <default>false</default>
+                <label>Counselor Information</label>
+            </value>
+            <value>
+                <fullName>Custom</fullName>
+                <default>true</default>
+                <label>Custom</label>
+            </value>
+            <value>
+                <fullName>List of Applications</fullName>
+                <default>false</default>
+                <label>List of Applications</label>
+            </value>
+            <value>
+                <fullName>Progress Bar</fullName>
+                <default>false</default>
+                <label>Progress Bar</label>
+            </value>
+            <value>
+                <fullName>Summit Events List LWC</fullName>
+                <default>false</default>
+                <label>Summit Events List LWC</label>
+            </value>
+            <value>
+                <fullName>UG Eligible Scholarships LWC</fullName>
+                <default>false</default>
+                <label>UG Eligible Scholarships LWC</label>
+            </value>
+            <value>
+                <fullName>UG Merit Scholarship Awards LWC</fullName>
+                <default>false</default>
+                <label>UG Merit Scholarship Awards LWC</label>
+            </value>
+            <value>
+                <fullName>User Info Login/Logout</fullName>
+                <default>false</default>
+                <label>User Info Login/Logout</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

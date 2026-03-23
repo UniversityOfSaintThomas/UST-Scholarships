@@ -1,0 +1,64 @@
+<apex:page showHeader="false" sidebar="false" applyHtmlTag="false" applyBodyTag="false" standardStylesheets="false" docType="html-5.0" cache="false" controller="ScholarshipApplicationCompleteController">
+    <apex:composition template="ScholarshipTemplate2024">
+        <apex:define name="metaPageTitle">
+            Complete! | Scholarships at St. Thomas
+        </apex:define>
+        <apex:define name="body">
+            <div class="slds-grid slds-wrap normalizeSLDS" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                <nav class="slds-col slds-size_1-of-1">
+                    <h1 class="slds-text-heading_large">
+                        Scholarships
+                    </h1>
+                    <ul>
+                        <li>
+                            <apex:outputLink value="{!$Page.ScholarshipHome}">Scholarship List</apex:outputLink>
+                        </li>
+                        <li>
+                            <apex:outputLink value="{!$Page.ApplicationPortal}">Admissions Home</apex:outputLink>
+                        </li>
+                        <apex:outputPanel layout="none" rendered="{!(ISPICKVAL($User.UserType,'Guest'))}">
+                            <li>
+                                <apex:outputLink value="{!$Site.Prefix}/ApplicationLogin">Login</apex:outputLink>
+                            </li>
+                        </apex:outputPanel>
+                    </ul>
+                </nav>
+
+                <apex:pageMessages escape="false"/>
+
+                <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
+                    <h2 class="slds-text-heading_large">
+                        <strong>{!scholarship.Name}</strong>
+                    </h2>
+                </div>
+                <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
+                    <p class="slds-text-body_regular">
+                        Your application for the {!scholarship.Name} has been received and is being reviewed.
+                    </p>
+                    <apex:outputPanel rendered="{!(!ISBLANK(scholarshipApplicant.Recommendation_Request_Date__c)) || (!ISBLANK(scholarshipApplicant.Recommendation2_Request_Date__c))}">
+                        <apex:variable var="s" value="{!IF((!ISBLANK(scholarshipApplicant.Recommendation_Request_Date__c)) && (!ISBLANK(scholarshipApplicant.Recommendation2_Request_Date__c)), 's', '')}"/>
+                        <b>Recommendation request{!s} sent to:</b><br/>
+                        <apex:outputPanel layout="block" rendered="{!!ISBLANK(scholarshipApplicant.Recommendation_Request_Date__c)}">
+                            {!scholarshipApplicant.Recommender_Name__c} ({!scholarshipApplicant.Recommender_Email__c})
+                            <apex:outputText value=" on {0,date,MM/dd/yyyy}">
+                                <apex:param value="{!scholarshipApplicant.Recommendation_Request_Date__c}"/>
+                            </apex:outputText>
+                            Status: {!recommender1EmailStatus}
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="block" rendered="{!!ISBLANK(scholarshipApplicant.Recommendation2_Request_Date__c)}">
+                            {!scholarshipApplicant.Recommender2_Name__c} ({!scholarshipApplicant.Recommender2_Email__c})
+                            <apex:outputText value=" on {0,date,MM/dd/yyyy}">
+                                <apex:param value="{!scholarshipApplicant.Recommendation2_Request_Date__c}"/>
+                            </apex:outputText>
+                            Status: {!recommender2EmailStatus}
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    <h2 class="slds-text-heading_medium slds-p-vertical_small">
+                        What happens next?
+                    </h2>
+                    <apex:outputText escape="false" value="{!scholarship.Review_Award_Process_Description__c}" rendered="{!IF(NOT(ISNULL(scholarship.Review_Award_Process_Description__c)), true, false)}"/>
+                </div>
+            </div>
+        </apex:define>
+    </apex:composition>
+</apex:page>
