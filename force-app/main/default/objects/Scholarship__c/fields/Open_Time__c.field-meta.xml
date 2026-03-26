@@ -3,7 +3,6 @@
     <fullName>Open_Time__c</fullName>
     <label>Open Time</label>
     <required>false</required>
-    <trackHistory>false</trackHistory>
     <trackTrending>false</trackTrending>
     <type>Time</type>
 </CustomField>

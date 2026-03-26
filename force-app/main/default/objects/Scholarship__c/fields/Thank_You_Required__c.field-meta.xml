@@ -3,7 +3,6 @@
     <fullName>Thank_You_Required__c</fullName>
     <label>Thank You Required</label>
     <required>false</required>
-    <trackHistory>false</trackHistory>
     <trackTrending>false</trackTrending>
     <type>Picklist</type>
     <valueSet>

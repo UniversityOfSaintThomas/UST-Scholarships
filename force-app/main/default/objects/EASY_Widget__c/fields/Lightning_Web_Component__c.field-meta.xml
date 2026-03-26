@@ -24,6 +24,17 @@
                 <default>false</default>
                 <label>Summit Events List</label>
             </value>
+            <value>
+                <fullName>c:scholarshipThankYousLwc</fullName>
+                <default>false</default>
+                <label>Scholarship Thank Yous</label>
+            </value>
+            <value>
+                <fullName>c:applicationDocumentsLwc</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>c:applicationDocumentsLwc</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>
