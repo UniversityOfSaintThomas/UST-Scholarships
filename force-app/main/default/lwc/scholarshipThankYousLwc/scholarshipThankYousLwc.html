@@ -4,5 +4,385 @@
 
 <!-- Scholarship Thank Yous Lwc -->
 <template>
-    Hello World!
+    <!-- ─── Loading Spinner ─── -->
+    <template lwc:if={isLoading}>
+        <div class="slds-align_absolute-center slds-p-around_large">
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </div>
+    </template>
+
+    <template lwc:else>
+        <!-- ─── Inline Feedback Banner (replaces Toast in Lightning Out) ─── -->
+        <template lwc:if={feedbackMessage.visible}>
+            <div class={feedbackClass} role="alert" aria-live="polite">
+                <span class="slds-icon_container slds-m-right_x-small">
+                    <lightning-icon
+                        icon-name={feedbackIconName}
+                        size="x-small"
+                        alternative-text={feedbackMessage.text}
+                    ></lightning-icon>
+                </span>
+                {feedbackMessage.text}
+            </div>
+        </template>
+
+        <!-- ─── Portal / List Mode ─── -->
+        <template lwc:if={isPortalMode}>
+            <div class="slds-p-bottom_small">
+                <h2 class="slds-text-heading_medium slds-m-bottom_x-small">Your Thank-You Letters</h2>
+                <p class="ty-context-message slds-m-bottom_medium">
+                    Your thank-you letter lets us steward your scholarship donors and maintain funding.
+                    Please complete a letter for each scholarship listed below.
+                </p>
+
+                <template lwc:if={hasItems}>
+                    <template for:each={thankYouItems} for:item="item">
+                        <div key={item.applicantId} class="ty-card slds-box slds-m-bottom_small">
+                            <!-- Card Header -->
+                            <div class="ty-card-header slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                                <div class="slds-col">
+                                    <span class="slds-text-heading_small">{item.scholarshipName}</span>
+                                    <template lwc:if={item.scholarshipAccountName}>
+                                        <span class="ty-donor-name slds-m-left_x-small">
+                                            | Donor: {item.scholarshipAccountName}
+                                        </span>
+                                    </template>
+                                </div>
+                                <div class="slds-col slds-has-flexi-truncate slds-text-align_right">
+                                    <span class={item.statusClass}>{item.thankYouStatus}</span>
+                                </div>
+                            </div>
+
+                            <!-- Data Warning -->
+                            <template lwc:if={item.hasDataWarning}>
+                                <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-top_x-small" role="alert">
+                                    <lightning-icon icon-name="utility:warning" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                    <strong>Staff Notice:</strong> {item.dataWarningMessage}
+                                </div>
+                            </template>
+
+                            <!-- Expand / Collapse Button -->
+                            <div class="slds-m-top_x-small">
+                                <button
+                                    class="slds-button slds-button_brand"
+                                    data-id={item.applicantId}
+                                    onclick={handleToggleEditor}
+                                >
+                                    {item.actionLabel}
+                                </button>
+                            </div>
+
+                            <!-- Inline Editor Panel -->
+                            <template lwc:if={item.editorOpen}>
+                                <div class="ty-editor slds-m-top_small">
+                                    <hr class="slds-m-vertical_x-small"/>
+
+                                    <!-- Previous letter re-use dropdown -->
+                                    <template lwc:if={item.hasPreviousLetters}>
+                                        <div class="slds-m-bottom_small">
+                                            <label class="slds-form-element__label" for={item.previousSelectId}>
+                                                Use text from a previous letter:
+                                            </label>
+                                            <div class="slds-select_container">
+                                                <select
+                                                    class="slds-select"
+                                                    id={item.previousSelectId}
+                                                    data-id={item.applicantId}
+                                                    onchange={handlePreviousLetterSelect}
+                                                >
+                                                    <option value="">-- Select a previous letter --</option>
+                                                    <template for:each={item.previousLetters} for:item="prev">
+                                                        <option key={prev.applicantId} value={prev.applicantId}>
+                                                            {prev.scholarshipName} ({prev.formattedDate})
+                                                        </option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Example text hint (only for Not Started) -->
+                                    <template lwc:if={item.showExample}>
+                                        <div class="ty-example-box slds-m-bottom_small">
+                                            <strong>Example opening:</strong>
+                                            <em> "Dear [Donor Name], I am writing to express my sincere gratitude for your generous scholarship support. Your gift has made it possible for me to pursue my education at the University of St. Thomas..."</em>
+                                        </div>
+                                    </template>
+
+                                    <!-- Letter Textarea -->
+                                    <div class="slds-form-element slds-m-bottom_small">
+                                        <label class="slds-form-element__label" for={item.textareaId}>
+                                            Your Thank-You Letter
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                        </label>
+                                        <div class="slds-form-element__control">
+                                            <textarea
+                                                id={item.textareaId}
+                                                class="slds-textarea"
+                                                rows="10"
+                                                placeholder="Write your thank-you letter here (minimum 3–5 sentences)..."
+                                                data-id={item.applicantId}
+                                                onchange={handleLetterChange}
+                                                disabled={item.isReadOnly}
+                                            >{item.thankYouLetter}</textarea>
+                                        </div>
+                                        <p class="slds-form-element__help">
+                                            {item.charCountLabel}
+                                        </p>
+                                    </div>
+
+                                    <!-- Preview Panel -->
+                                    <template lwc:if={item.showPreview}>
+                                        <div class="ty-preview-box slds-m-bottom_small">
+                                            <h4 class="slds-text-heading_small slds-m-bottom_x-small">Preview</h4>
+                                            <div class="ty-preview-content">{item.draftText}</div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Photo Upload -->
+                                    <template lwc:if={item.isEditable}>
+                                        <div class="slds-m-bottom_small">
+                                            <lightning-file-upload
+                                                label="Upload a Photo (optional)"
+                                                name="thankYouPhoto"
+                                                accept={acceptedFormats}
+                                                record-id={item.applicantId}
+                                                onuploadfinished={handlePhotoUpload}
+                                                data-id={item.applicantId}
+                                                multiple="false"
+                                            ></lightning-file-upload>
+                                        </div>
+
+                                        <!-- Photo rights checkbox -->
+                                        <template lwc:if={item.showPhotoRights}>
+                                            <div class="slds-form-element slds-m-bottom_small">
+                                                <div class="slds-form-element__control">
+                                                    <span class="slds-checkbox">
+                                                        <input
+                                                            type="checkbox"
+                                                            id={item.photoCheckboxId}
+                                                            data-id={item.applicantId}
+                                                            checked={item.photoRightsAccepted}
+                                                            onchange={handlePhotoRightsChange}
+                                                        />
+                                                        <label class="slds-checkbox__label" for={item.photoCheckboxId}>
+                                                            <span class="slds-checkbox_faux"></span>
+                                                            <span class="slds-form-element__label">
+                                                                I grant the University of St. Thomas permission to use my photo,
+                                                                name, and quotations from this letter for stewardship purposes.
+                                                            </span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
+
+                                    <!-- Action Buttons -->
+                                    <template lwc:if={item.isEditable}>
+                                        <div class="slds-grid slds-grid_align-end slds-m-top_small">
+                                            <button
+                                                class="slds-button slds-button_neutral slds-m-right_x-small"
+                                                data-id={item.applicantId}
+                                                onclick={handleTogglePreview}
+                                            >
+                                                {item.previewLabel}
+                                            </button>
+                                            <button
+                                                class="slds-button slds-button_neutral slds-m-right_x-small"
+                                                data-id={item.applicantId}
+                                                onclick={handleSaveDraft}
+                                            >
+                                                Save Draft
+                                            </button>
+                                            <button
+                                                class="slds-button slds-button_brand"
+                                                data-id={item.applicantId}
+                                                onclick={handleSubmit}
+                                            >
+                                                Submit Letter
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </template>
+
+                <template lwc:else>
+                    <div class="slds-illustration slds-illustration_small slds-p-vertical_medium">
+                        <p class="slds-text-body_regular">You have no outstanding thank-you letter requirements.</p>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- ─── Record Page / Single Item Mode ─── -->
+        <template lwc:if={isRecordMode}>
+            <template lwc:if={singleItem}>
+                <div class="ty-card slds-box">
+                    <div class="ty-card-header slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
+                        <h2 class="slds-text-heading_small">{singleItem.scholarshipName}</h2>
+                        <span class={singleItem.statusClass}>{singleItem.thankYouStatus}</span>
+                    </div>
+
+                    <template lwc:if={singleItem.hasDataWarning}>
+                        <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_small" role="alert">
+                            <lightning-icon icon-name="utility:warning" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                            <strong>Data Issue:</strong> {singleItem.dataWarningMessage}
+                        </div>
+                    </template>
+
+                    <dl class="slds-dl_horizontal slds-m-bottom_small">
+                        <dt class="slds-dl_horizontal__label">Donor:</dt>
+                        <dd class="slds-dl_horizontal__detail">{singleItem.scholarshipAccountName}</dd>
+                        <dt class="slds-dl_horizontal__label">FA Code:</dt>
+                        <dd class="slds-dl_horizontal__detail">{singleItem.financialAidCode}</dd>
+                        <dt class="slds-dl_horizontal__label">Designation:</dt>
+                        <dd class="slds-dl_horizontal__detail">{singleItem.designationCode}</dd>
+                        <dt class="slds-dl_horizontal__label">Required:</dt>
+                        <dd class="slds-dl_horizontal__detail">{singleItem.thankYouRequired}</dd>
+                        <dt class="slds-dl_horizontal__label">Submitted:</dt>
+                        <dd class="slds-dl_horizontal__detail">{singleItem.formattedSubmittedDate}</dd>
+                        <dt class="slds-dl_horizontal__label">Photo Rights:</dt>
+                        <dd class="slds-dl_horizontal__detail">{singleItem.photoRightsLabel}</dd>
+                    </dl>
+
+                    <!-- Toggle button — shown when editable OR to view a submitted letter -->
+                    <div class="slds-m-top_x-small">
+                        <button
+                            class="slds-button slds-button_brand"
+                            onclick={handleRecordToggleEditor}
+                        >
+                            {recordToggleLabel}
+                        </button>
+                    </div>
+
+                    <!-- Editor / Viewer Panel -->
+                    <template lwc:if={singleItem.editorOpen}>
+                        <div class="ty-editor slds-m-top_small">
+                            <hr class="slds-m-vertical_x-small"/>
+
+                            <!-- Previous letter re-use dropdown -->
+                            <template lwc:if={singleItem.hasPreviousLetters}>
+                                <div class="slds-m-bottom_small">
+                                    <label class="slds-form-element__label">
+                                        Use text from a previous letter:
+                                    </label>
+                                    <div class="slds-select_container">
+                                        <select class="slds-select" onchange={handleRecordPreviousLetterSelect}>
+                                            <option value="">-- Select a previous letter --</option>
+                                            <template for:each={singleItem.previousLetters} for:item="prev">
+                                                <option key={prev.applicantId} value={prev.applicantId}>
+                                                    {prev.scholarshipName} ({prev.formattedDate})
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Example text hint (only for Not Started) -->
+                            <template lwc:if={singleItem.showExample}>
+                                <div class="ty-example-box slds-m-bottom_small">
+                                    <strong>Example opening:</strong>
+                                    <em> "Dear [Donor Name], I am writing to express my sincere gratitude for your generous scholarship support. Your gift has made it possible for me to pursue my education at the University of St. Thomas..."</em>
+                                </div>
+                            </template>
+
+                            <!-- Letter Textarea -->
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <label class="slds-form-element__label">
+                                    Your Thank-You Letter
+                                    <template lwc:if={singleItem.isEditable}>
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                    </template>
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <textarea
+                                        class="slds-textarea ty-record-textarea"
+                                        rows="10"
+                                        placeholder="Write your thank-you letter here (minimum 3–5 sentences)..."
+                                        onchange={handleRecordLetterChange}
+                                        disabled={singleItem.isReadOnly}
+                                    >{singleItem.thankYouLetter}</textarea>
+                                </div>
+                                <p class="slds-form-element__help">
+                                    {singleItem.charCountLabel}
+                                </p>
+                            </div>
+
+                            <!-- Preview Panel -->
+                            <template lwc:if={singleItem.showPreview}>
+                                <div class="ty-preview-box slds-m-bottom_small">
+                                    <h4 class="slds-text-heading_small slds-m-bottom_x-small">Preview</h4>
+                                    <div class="ty-preview-content">{singleItem.draftText}</div>
+                                </div>
+                            </template>
+
+                            <!-- Photo Upload + Rights (editable only) -->
+                            <template lwc:if={singleItem.isEditable}>
+                                <div class="slds-m-bottom_small">
+                                    <lightning-file-upload
+                                        label="Upload a Photo (optional)"
+                                        name="thankYouPhoto"
+                                        accept={acceptedFormats}
+                                        record-id={recordId}
+                                        onuploadfinished={handleRecordPhotoUpload}
+                                        multiple="false"
+                                    ></lightning-file-upload>
+                                </div>
+
+                                <template lwc:if={singleItem.showPhotoRights}>
+                                    <div class="slds-form-element slds-m-bottom_small">
+                                        <div class="slds-form-element__control">
+                                            <span class="slds-checkbox">
+                                                <input
+                                                    type="checkbox"
+                                                    id="record-photo-checkbox"
+                                                    checked={singleItem.photoRightsAccepted}
+                                                    onchange={handleRecordPhotoRightsChange}
+                                                />
+                                                <label class="slds-checkbox__label" for="record-photo-checkbox">
+                                                    <span class="slds-checkbox_faux"></span>
+                                                    <span class="slds-form-element__label">
+                                                        I grant the University of St. Thomas permission to use my photo,
+                                                        name, and quotations from this letter for stewardship purposes.
+                                                    </span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Action Buttons -->
+                                <div class="slds-grid slds-grid_align-end slds-m-top_small">
+                                    <button
+                                        class="slds-button slds-button_neutral slds-m-right_x-small"
+                                        onclick={handleRecordTogglePreview}
+                                    >
+                                        {singleItem.previewLabel}
+                                    </button>
+                                    <button
+                                        class="slds-button slds-button_neutral slds-m-right_x-small"
+                                        onclick={handleRecordSaveDraft}
+                                    >
+                                        Save Draft
+                                    </button>
+                                    <button
+                                        class="slds-button slds-button_brand"
+                                        onclick={handleRecordSubmit}
+                                    >
+                                        Submit Letter
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </template>
+    </template>
 </template>
+

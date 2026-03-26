@@ -1,3 +1,94 @@
 /**
- * Created by thad on 3/25/2026.
+ * scholarshipThankYousLwc.css
+ * Created: 2026-03-26
  */
+
+/* ── Card Layout ─────────────────────────────────────────── */
+.ty-card {
+    border-radius: 4px;
+    background: #fff;
+}
+
+.ty-card-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.ty-donor-name {
+    font-size: 0.875rem;
+    color: #514f4d;
+}
+
+/* ── Status Badges ───────────────────────────────────────── */
+.ty-badge-not-started {
+    background-color: #f4bc25;
+    color: #080707;
+}
+
+.ty-badge-in-progress {
+    background-color: #0070d2;
+    color: #fff;
+}
+
+.ty-badge-submitted {
+    background-color: #4bca81;
+    color: #080707;
+}
+
+.ty-badge-complete {
+    background-color: #2e844a;
+    color: #fff;
+}
+
+/* ── Editor Panel ────────────────────────────────────────── */
+.ty-editor {
+    padding-top: 0.5rem;
+}
+
+.ty-example-box {
+    background: #f3f3f3;
+    border-left: 3px solid #0070d2;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0 4px 4px 0;
+}
+
+/* ── Preview Panel ───────────────────────────────────────── */
+.ty-preview-box {
+    background: #fafafa;
+    border: 1px solid #dddbda;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+}
+
+.ty-preview-content {
+    white-space: pre-wrap;
+    font-family: Georgia, serif;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #080707;
+}
+
+/* ── Read-only Letter Display ────────────────────────────── */
+.ty-letter-readonly {
+    white-space: pre-wrap;
+    font-family: Georgia, serif;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    background: #f9f9f9;
+}
+
+/* ── Context Message ─────────────────────────────────────── */
+.ty-context-message {
+    color: #444;
+    font-size: 0.9375rem;
+    max-width: 720px;
+}
+
+/* ── Feedback Banner ─────────────────────────────────────── */
+.ty-feedback-banner {
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+}

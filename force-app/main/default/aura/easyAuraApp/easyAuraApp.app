@@ -5,5 +5,6 @@
 <aura:application description="easyAuraApp" access="GLOBAL" extends="ltng:outApp" implements="ltng:allowGuestAccess">
     <aura:dependency resource="c:summitEventsListView"/>
     <aura:dependency resource="c:scholarshipEligibleListView"/>
+    <aura:dependency resource="c:scholarshipThankYousLwc"/>
     <aura:dependency resource="lightning:flow"/>
 </aura:application>

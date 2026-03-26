@@ -1,0 +1,39 @@
+<apex:page showHeader="false" sidebar="false" applyHtmlTag="false" applyBodyTag="false" standardStylesheets="false" docType="html-5.0" cache="false" controller="ScholarshipHomeController">
+    <apex:variable value="{!contactId}" var="varContactId"/>
+
+    <apex:includeLightning />
+    <apex:composition template="ScholarshipTemplate2024">
+        <apex:define name="metaPageTitle">Thank-You Letters | Scholarships at St. Thomas</apex:define>
+
+        <apex:define name="body">
+            <div class="slds-grid slds-wrap" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                <apex:form styleClass="slds-grid slds-wrap">
+                    <nav class="slds-col slds-size_1-of-1">
+                        <h1 class="slds-text-heading_large">
+                            Scholarships
+                        </h1>
+                        <apex:outputLink value="{!$Page.ScholarshipHome}" style="font-size: 1rem">← Back to Scholarship List</apex:outputLink>
+                    </nav>
+                    <div id="lightningvf" class="slds-col slds-size_1-of-1 slds-m-top_medium"></div>
+                </apex:form>
+            </div>
+        </apex:define>
+
+        <apex:define name="scriptsHead">
+            <script>
+                $Lightning.use("c:easyAuraApp", function () {
+                    $Lightning.createComponent("c:scholarshipThankYousLwc",
+                        {
+                            contactId: "{!varContactId}"
+                        },
+                        "lightningvf",
+                        function (cmp) {
+                            console.log("Scholarship Thank You LWC loaded");
+                        }
+                    );
+                });
+            </script>
+        </apex:define>
+    </apex:composition>
+</apex:page>
+

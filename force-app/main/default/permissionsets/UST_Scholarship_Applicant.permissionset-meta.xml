@@ -426,6 +426,26 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
+        <editable>true</editable>
+        <field>Scholarship_Applicant__c.Thank_You_Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Scholarship_Applicant__c.Thank_You_Letter__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Scholarship_Applicant__c.Thank_You_Submitted_Date__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Scholarship_Applicant__c.Thank_You_Photo_Rights_Accepted__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
         <editable>false</editable>
         <field>Scholarship__c.Total_Budget_Used__c</field>
         <readable>true</readable>
@@ -470,6 +490,10 @@
     </pageAccesses>
     <pageAccesses>
         <apexPage>ScholarshipHome</apexPage>
+        <enabled>true</enabled>
+    </pageAccesses>
+    <pageAccesses>
+        <apexPage>ScholarshipThankYou</apexPage>
         <enabled>true</enabled>
     </pageAccesses>
     <pageAccesses>
