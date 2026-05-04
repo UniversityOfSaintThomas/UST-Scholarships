@@ -90,6 +90,7 @@ public without sharing class MeritScholarshipAwardsController {
                             Adj_Nebraska_Pathways_Scholarship__c,
                             Sauer_Cristo_Rey_Scholarship__c,
                             Adj_Sauer_Cristo_Rey_Scholarship__c,
+                            Adj_Athletic_Revision__c,
                             Adj_Strategic_Aid_Deployment__c,
                             Transfer_PTK_Scholarship__c,
                             Adj_Transfer_PTK_Scholarship__c,
@@ -114,7 +115,10 @@ public without sharing class MeritScholarshipAwardsController {
                 awardInfo.awardAdjReason = String.isNotBlank(a.Scholarship_Award_Adjust_Reason__c) ? a.Scholarship_Award_Adjust_Reason__c : '';
                 awardInfo.scholarshipControllerName = String.isNotBlank(a.Related_Scholarship_Name__c) ? a.Related_Scholarship_Name__c : '';
 
-                domesticScholarshipsList.add(createDomesticScholarships('St. Thomas Scholarship', a.Base_Merit_Amount__c, a.Adj_Base_Merit_Amount__c));
+                String scholarshipNameNormalize = awardInfo.scholarshipControllerName == null ? '' : awardInfo.scholarshipControllerName.toLowerCase();
+                String scholarshipNameBaseAmount = scholarshipNameNormalize.contains('ug tr merit scholarship') ? 'UST Transfer Award' : 'St. Thomas Scholarship';
+
+                domesticScholarshipsList.add(createDomesticScholarships(scholarshipNameBaseAmount, a.Base_Merit_Amount__c, a.Adj_Base_Merit_Amount__c));
                 domesticScholarshipsList.add(createDomesticScholarships('Catholic High School Scholarship', a.Catholic_High_School_Scholarship__c, a.Adj_Catholic_High_School_Scholar__c));
                 domesticScholarshipsList.add(createDomesticScholarships('California Pathway Scholarship', a.California_Pathway_Scholarship__c, a.Adj_California_Pathway_Scholarship__c));
                 domesticScholarshipsList.add(createDomesticScholarships('Colorado Pathway Scholarship', a.Colorado_Pathway_Scholarship__c, a.Adj_Colorado_Pathway_Scholarship__c));
@@ -125,6 +129,7 @@ public without sharing class MeritScholarshipAwardsController {
                 domesticScholarshipsList.add(createDomesticScholarships('Missouri Pathway Scholarship', a.Missouri_Pathway_Scholarship__c, a.Adj_Missouri_Pathway_Scholarship__c));
                 domesticScholarshipsList.add(createDomesticScholarships('Nebraska Pathways Scholarship', a.Nebraska_Pathways_Scholarship__c, a.Adj_Nebraska_Pathways_Scholarship__c));
                 domesticScholarshipsList.add(createDomesticScholarships('Sauer Cristo Rey Scholarship', a.Sauer_Cristo_Rey_Scholarship__c, a.Adj_Sauer_Cristo_Rey_Scholarship__c));
+                domesticScholarshipsList.add(createDomesticScholarships('Athletic Revision Scholarship', 0, a.Adj_Athletic_Revision__c));
                 domesticScholarshipsList.add(createDomesticScholarships('Through the Arches Scholarship', 0, a.Adj_Strategic_Aid_Deployment__c));
                 domesticScholarshipsList.add(createDomesticScholarships('Transfer PTK Scholarship', a.Transfer_PTK_Scholarship__c, a.Adj_Transfer_PTK_Scholarship__c));
 
