@@ -98,14 +98,6 @@
                 <c:EASYWidgetScreenFlow appInfo="{!appInfo}" widget="{!widget}"/>
             </apex:outputPanel>
 
-            <apex:outputPanel layout="none" rendered="{!widget.Widget_Type__c == 'Summit Events List LWC' }">
-                <c:EasyLwc appInfo="{!appInfo}" widget="{!widget}" currentPage="{!currentPage}"/>
-            </apex:outputPanel>
-
-            <apex:outputPanel layout="none" rendered="{!widget.Widget_Type__c == 'UG Eligible Scholarships LWC' }">
-                <c:EasyLwc appInfo="{!appInfo}" widget="{!widget}" currentPage="{!currentPage}" widgetDisplay="true"/>
-            </apex:outputPanel>
-
             <apex:outputPanel layout="none" rendered="{!!ISBLANK(widget.Lightning_Web_Component__c)}">
                 <c:EasyLwc appInfo="{!appInfo}" widget="{!widget}" currentPage="{!currentPage}" widgetDisplay="true"/>
             </apex:outputPanel>
