@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Widget_Type__c</fullName>
+    <deprecated>false</deprecated>
     <description>Choose what type of widget you want to create. Typically this will be set to custom unless you wish a
         pre-programmed widget.</description>
     <inlineHelpText>Choose what type of widget you want to create. Typically this will be set to custom unless you wish
@@ -49,19 +50,22 @@
                 <label>Progress Bar</label>
             </value>
             <value>
+                <fullName>Summit Events List</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Summit Events List - DO NOT USE</label>
+            </value>
+            <value>
                 <fullName>Summit Events List LWC</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>Summit Events List LWC</label>
             </value>
             <value>
                 <fullName>UG Eligible Scholarships LWC</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>UG Eligible Scholarships LWC</label>
-            </value>
-            <value>
-                <fullName>UG Merit Scholarship Awards LWC</fullName>
-                <default>false</default>
-                <label>UG Merit Scholarship Awards LWC</label>
             </value>
             <value>
                 <fullName>User Info Login/Logout</fullName>

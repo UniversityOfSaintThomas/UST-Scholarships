@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customValue>
+        <fullName>Software</fullName>
+        <default>false</default>
+        <label>Software</label>
+    </customValue>
+    <customValue>
+        <fullName>Engineering</fullName>
+        <default>false</default>
+        <label>Engineering</label>
+    </customValue>
+    <customValue>
+        <fullName>Catholic Studies</fullName>
+        <default>false</default>
+        <label>Catholic Studies</label>
+    </customValue>
+    <customValue>
+        <fullName>English</fullName>
+        <default>false</default>
+        <label>English</label>
+    </customValue>
+    <customValue>
+        <fullName>Spanish</fullName>
+        <default>false</default>
+        <label>Spanish</label>
+    </customValue>
+    <customValue>
+        <fullName>Music Education</fullName>
+        <default>false</default>
+        <label>Music Education</label>
+    </customValue>
+    <customValue>
+        <fullName>Master of Business Administration</fullName>
+        <default>false</default>
+        <label>Master of Business Administration</label>
+    </customValue>
+    <customValue>
+        <fullName>Master of Science</fullName>
+        <default>false</default>
+        <label>Master of Science</label>
+    </customValue>
+    <customValue>
+        <fullName>Certificate</fullName>
+        <default>false</default>
+        <label>Certificate</label>
+    </customValue>
+    <customValue>
+        <fullName>Accelerated</fullName>
+        <default>false</default>
+        <label>Accelerated</label>
+    </customValue>
+    <customValue>
+        <fullName>Advanced</fullName>
+        <default>false</default>
+        <label>Advanced</label>
+    </customValue>
+    <customValue>
+        <fullName>Regular</fullName>
+        <default>false</default>
+        <label>Regular</label>
+    </customValue>
+    <customValue>
+        <fullName>Work and Learn/Residency</fullName>
+        <default>false</default>
+        <label>Work and Learn/Residency</label>
+    </customValue>
+    <customValue>
+        <fullName>Teacher Education</fullName>
+        <default>false</default>
+        <label>Teacher Education</label>
+    </customValue>
+    <customValue>
+        <fullName>Educational Leadership</fullName>
+        <default>false</default>
+        <label>Educational Leadership</label>
+    </customValue>
+    <customValue>
+        <fullName>Special Education</fullName>
+        <default>false</default>
+        <label>Special Education</label>
+    </customValue>
+    <customValue>
+        <fullName>Non-Degree</fullName>
+        <default>false</default>
+        <label>Non-Degree</label>
+    </customValue>
+    <customValue>
+        <fullName>Art History / Museum Studies</fullName>
+        <default>false</default>
+        <label>Art History / Museum Studies</label>
+    </customValue>
+    <customValue>
+        <fullName>Diversity Leadership</fullName>
+        <default>false</default>
+        <label>Diversity Leadership</label>
+    </customValue>
+    <customValue>
+        <fullName>Mentor (Licensed Registered Nurse)</fullName>
+        <default>false</default>
+        <label>Mentor (Licensed Registered Nurse)</label>
+    </customValue>
+    <customValue>
+        <fullName>Mentee (Current Student)</fullName>
+        <default>false</default>
+        <label>Mentee (Current Student)</label>
+    </customValue>
+    <customValue>
+        <fullName>Regular Standing</fullName>
+        <default>false</default>
+        <label>Regular Standing</label>
+    </customValue>
+    <customValue>
+        <fullName>Advanced Standing</fullName>
+        <default>false</default>
+        <label>Advanced Standing</label>
+    </customValue>
+    <customValue>
+        <fullName>Micro-Credential</fullName>
+        <default>false</default>
+        <label>Micro-Credential</label>
+    </customValue>
+    <customValue>
+        <fullName>Artificial Intelligence Leadership</fullName>
+        <default>false</default>
+        <label>Artificial Intelligence Leadership</label>
+    </customValue>
+    <customValue>
+        <fullName>Current Student</fullName>
+        <default>false</default>
+        <label>Current Student</label>
+    </customValue>
+    <customValue>
+        <fullName>Transfer</fullName>
+        <default>false</default>
+        <label>Transfer</label>
+    </customValue>
+    <customValue>
+        <fullName>Emergency &amp; Disaster Management</fullName>
+        <default>false</default>
+        <label>Emergency &amp; Disaster Management</label>
+    </customValue>
+    <customValue>
+        <fullName>Interdisciplinary</fullName>
+        <default>false</default>
+        <label>Interdisciplinary</label>
+    </customValue>
+    <customValue>
+        <fullName>UG Teacher Residency – Public Schools (SoEd)</fullName>
+        <default>false</default>
+        <label>UG Teacher Residency – Public Schools (SoEd)</label>
+    </customValue>
+    <customValue>
+        <fullName>UG Teacher Residency – Catholic or Private Schools (SoEd)</fullName>
+        <default>false</default>
+        <label>UG Teacher Residency – Catholic or Private Schools (SoEd)</label>
+    </customValue>
+    <customValue>
+        <fullName>Art History</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Art History</label>
+    </customValue>
+    <customValue>
+        <fullName>Undergraduate</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Undergraduate</label>
+    </customValue>
+    <customValue>
+        <fullName>Adult</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Adult</label>
+    </customValue>
+    <customValue>
+        <fullName>Traditional</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Traditional</label>
+    </customValue>
+    <customValue>
+        <fullName>Graduate</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Graduate</label>
+    </customValue>
+    <description>Student types for admissions.</description>
+    <masterLabel>Student Types</masterLabel>
+    <sorted>false</sorted>
+</GlobalValueSet>
