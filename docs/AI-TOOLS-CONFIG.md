@@ -39,7 +39,7 @@ This file provides project-specific context for AI assistants working in this re
 ### `Scholarship_Applicant__c`
 - `Scholarship_Status__c` — Application lifecycle picklist; `Accepted` and `Awarded` are the "awarded" statuses that gate TY eligibility
 - `Thank_You_Status__c` — Picklist: `Not Started`, `In Progress`, `Submitted`, `Complete`
-- `Thank_You_Letter__c` — Long Text Area (32,768). **Cannot be used in SOQL WHERE clauses.** Filter in Apex instead.
+- `Thank_You_Letter__c` — Rich Text Area (131,072), stores HTML. **Cannot be used in SOQL WHERE clauses.** Filter in Apex instead. The 100-character minimum enforced in `ScholarshipThankYouController` and `scholarshipThankYousLwc` is measured on plain text stripped of HTML tags client-side — the Apex check still measures raw HTML length, so it's more lenient.
 - `Thank_You_Photo_Rights_Accepted__c` — Checkbox for photo/quote usage consent
 - `Thank_You_Submitted_Date__c` — DateTime, set on submit
 

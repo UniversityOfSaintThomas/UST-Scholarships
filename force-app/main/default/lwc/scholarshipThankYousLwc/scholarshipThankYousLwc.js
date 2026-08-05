@@ -145,7 +145,6 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             previewLabel:      'Preview',
             showExample:       status === 'Not Started',
             charCountLabel:    this._charCountLabel(raw.thankYouLetter),
-            textareaId:        `textarea-${raw.applicantId}`,
             previousSelectId:  `prev-${raw.applicantId}`,
             photoCheckboxId:   `photo-${raw.applicantId}`,
             formattedSubmittedDate: this._formatDate(raw.submittedDate),
@@ -176,8 +175,17 @@ export default class ScholarshipThankYousLwc extends LightningElement {
         return 'View →';
     }
 
-    _charCountLabel(text) {
-        const len = (text || '').length;
+    // Rich text is stored/transmitted as HTML — measure the visible text only,
+    // so the 100-character minimum reflects what the student actually wrote.
+    _plainTextLength(html) {
+        return (html || '')
+            .replace(/<[^>]*>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .trim().length;
+    }
+
+    _charCountLabel(html) {
+        const len = this._plainTextLength(html);
         if (len === 0) return 'Minimum 100 characters required.';
         if (len < MIN_LENGTH) return `${len} / ${MIN_LENGTH} characters minimum.`;
         return `${len} characters ✓`;
@@ -262,15 +270,15 @@ export default class ScholarshipThankYousLwc extends LightningElement {
                 draftText:     cached.letterText,
                 charCountLabel: this._charCountLabel(cached.letterText)
             });
-            // Update the real textarea value
-            const textarea = this.template.querySelector(`textarea[data-id="${id}"]`);
-            if (textarea) textarea.value = cached.letterText;
+            // Update the real rich text editor value
+            const editor = this.template.querySelector(`lightning-input-rich-text[data-id="${id}"]`);
+            if (editor) editor.value = cached.letterText;
         }
     }
 
     handleLetterChange(event) {
         const id   = event.currentTarget.dataset.id;
-        const text = event.target.value;
+        const text = event.detail.value;
         this._updateItem(id, {
             draftText:      text,
             charCountLabel: this._charCountLabel(text)
@@ -293,8 +301,8 @@ export default class ScholarshipThankYousLwc extends LightningElement {
         const item = this._findItem(id);
         if (!item) return;
 
-        const textarea = this.template.querySelector(`textarea[data-id="${id}"]`);
-        const text     = textarea ? textarea.value : item.draftText;
+        const editor = this.template.querySelector(`lightning-input-rich-text[data-id="${id}"]`);
+        const text   = editor ? editor.value : item.draftText;
 
         this.isLoading = true;
         saveThankYouDraft({ applicantId: id, letterText: text })
@@ -321,14 +329,15 @@ export default class ScholarshipThankYousLwc extends LightningElement {
         const item = this._findItem(id);
         if (!item) return;
 
-        const textarea = this.template.querySelector(`textarea[data-id="${id}"]`);
-        const text     = textarea ? textarea.value : item.draftText;
+        const editor = this.template.querySelector(`lightning-input-rich-text[data-id="${id}"]`);
+        const text   = editor ? editor.value : item.draftText;
 
-        // Client-side length guard
-        if (!text || text.trim().length < MIN_LENGTH) {
+        // Client-side length guard (measured on visible text, not HTML markup)
+        const plainLength = this._plainTextLength(text);
+        if (plainLength < MIN_LENGTH) {
             this._showFeedback(
                 'error',
-                `Your letter must be at least ${MIN_LENGTH} characters. Current length: ${(text || '').length}.`
+                `Your letter must be at least ${MIN_LENGTH} characters. Current length: ${plainLength}.`
             );
             return;
         }
@@ -402,7 +411,7 @@ export default class ScholarshipThankYousLwc extends LightningElement {
     }
 
     handleRecordLetterChange(event) {
-        const text = event.target.value;
+        const text = event.detail.value;
         this._updateSingleItem({
             draftText:      text,
             charCountLabel: this._charCountLabel(text)
@@ -426,14 +435,14 @@ export default class ScholarshipThankYousLwc extends LightningElement {
                 draftText:      cached.letterText,
                 charCountLabel: this._charCountLabel(cached.letterText)
             });
-            const textarea = this.template.querySelector('.ty-record-textarea');
-            if (textarea) textarea.value = cached.letterText;
+            const editor = this.template.querySelector('.ty-record-textarea');
+            if (editor) editor.value = cached.letterText;
         }
     }
 
     handleRecordSaveDraft() {
-        const textarea = this.template.querySelector('.ty-record-textarea');
-        const text     = textarea ? textarea.value : this.singleItem.draftText;
+        const editor = this.template.querySelector('.ty-record-textarea');
+        const text   = editor ? editor.value : this.singleItem.draftText;
 
         this.isLoading = true;
         saveThankYouDraft({ applicantId: this.recordId, letterText: text })
@@ -456,13 +465,14 @@ export default class ScholarshipThankYousLwc extends LightningElement {
     }
 
     handleRecordSubmit() {
-        const textarea = this.template.querySelector('.ty-record-textarea');
-        const text     = textarea ? textarea.value : this.singleItem.draftText;
+        const editor = this.template.querySelector('.ty-record-textarea');
+        const text   = editor ? editor.value : this.singleItem.draftText;
 
-        if (!text || text.trim().length < MIN_LENGTH) {
+        const plainLength = this._plainTextLength(text);
+        if (plainLength < MIN_LENGTH) {
             this._showFeedback(
                 'error',
-                `Your letter must be at least ${MIN_LENGTH} characters. Current length: ${(text || '').length}.`
+                `Your letter must be at least ${MIN_LENGTH} characters. Current length: ${plainLength}.`
             );
             return;
         }

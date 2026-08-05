@@ -75,11 +75,11 @@ EASY_Widget__c                  (integration object for EASY application system)
 | `Recommendation__c` / `Recommendation2__c` | Text | Recommender email addresses |
 | `Recommendation_Received__c` / `Recommendation2_Received__c` | Checkbox | Receipt flags |
 | `Thank_You_Status__c` | Picklist | `Not Started` / `In Progress` / `Submitted` / `Complete` |
-| `Thank_You_Letter__c` | Long Text (32,768) | Student's written letter |
+| `Thank_You_Letter__c` | Rich Text Area (131,072) | Student's written letter, stored as HTML |
 | `Thank_You_Submitted_Date__c` | DateTime | Stamp when student submits |
 | `Thank_You_Photo_Rights_Accepted__c` | Checkbox | Photo/quote rights consent |
 
-> ⚠️ `Thank_You_Letter__c` is a Long Text Area — it **cannot** be used in a SOQL `WHERE` clause. Always query without it and filter in Apex.
+> ⚠️ `Thank_You_Letter__c` is a Rich Text Area (Long Text Area subtype) — it **cannot** be used in a SOQL `WHERE` clause. Always query without it and filter in Apex. Its value is HTML, rendered via `lightning-input-rich-text` (edit) and `lightning-formatted-rich-text` (preview/read-only) in `scholarshipThankYousLwc` — never bind it into raw markup manually.
 
 ---
 

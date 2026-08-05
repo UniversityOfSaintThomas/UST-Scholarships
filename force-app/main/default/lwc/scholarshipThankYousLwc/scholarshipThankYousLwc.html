@@ -109,22 +109,20 @@
                                         </div>
                                     </template>
 
-                                    <!-- Letter Textarea -->
+                                    <!-- Letter Rich Text Input -->
                                     <div class="slds-form-element slds-m-bottom_small">
-                                        <label class="slds-form-element__label" for={item.textareaId}>
+                                        <label class="slds-form-element__label">
                                             Your Thank-You Letter
                                             <abbr class="slds-required" title="required">*</abbr>
                                         </label>
                                         <div class="slds-form-element__control">
-                                            <textarea
-                                                id={item.textareaId}
-                                                class="slds-textarea"
-                                                rows="10"
-                                                placeholder="Write your thank-you letter here (minimum 3–5 sentences)..."
+                                            <lightning-input-rich-text
                                                 data-id={item.applicantId}
+                                                value={item.thankYouLetter}
+                                                placeholder="Write your thank-you letter here (minimum 3–5 sentences)..."
                                                 onchange={handleLetterChange}
                                                 disabled={item.isReadOnly}
-                                            >{item.thankYouLetter}</textarea>
+                                            ></lightning-input-rich-text>
                                         </div>
                                         <p class="slds-form-element__help">
                                             {item.charCountLabel}
@@ -135,7 +133,9 @@
                                     <template lwc:if={item.showPreview}>
                                         <div class="ty-preview-box slds-m-bottom_small">
                                             <h4 class="slds-text-heading_small slds-m-bottom_x-small">Preview</h4>
-                                            <div class="ty-preview-content">{item.draftText}</div>
+                                            <div class="ty-preview-content">
+                                                <lightning-formatted-rich-text value={item.draftText}></lightning-formatted-rich-text>
+                                            </div>
                                         </div>
                                     </template>
 
@@ -291,7 +291,7 @@
                                 </div>
                             </template>
 
-                            <!-- Letter Textarea -->
+                            <!-- Letter Rich Text Input -->
                             <div class="slds-form-element slds-m-bottom_small">
                                 <label class="slds-form-element__label">
                                     Your Thank-You Letter
@@ -300,13 +300,13 @@
                                     </template>
                                 </label>
                                 <div class="slds-form-element__control">
-                                    <textarea
-                                        class="slds-textarea ty-record-textarea"
-                                        rows="10"
+                                    <lightning-input-rich-text
+                                        class="ty-record-textarea"
+                                        value={singleItem.thankYouLetter}
                                         placeholder="Write your thank-you letter here (minimum 3–5 sentences)..."
                                         onchange={handleRecordLetterChange}
                                         disabled={singleItem.isReadOnly}
-                                    >{singleItem.thankYouLetter}</textarea>
+                                    ></lightning-input-rich-text>
                                 </div>
                                 <p class="slds-form-element__help">
                                     {singleItem.charCountLabel}
@@ -317,7 +317,9 @@
                             <template lwc:if={singleItem.showPreview}>
                                 <div class="ty-preview-box slds-m-bottom_small">
                                     <h4 class="slds-text-heading_small slds-m-bottom_x-small">Preview</h4>
-                                    <div class="ty-preview-content">{singleItem.draftText}</div>
+                                    <div class="ty-preview-content">
+                                        <lightning-formatted-rich-text value={singleItem.draftText}></lightning-formatted-rich-text>
+                                    </div>
                                 </div>
                             </template>
 
