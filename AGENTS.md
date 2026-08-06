@@ -44,6 +44,27 @@ For the full known-gotchas table (deploy errors, source-tracking cache issues, e
 
 ---
 
+## Lightning Out Component Caching on the Site (important — wastes time if unknown)
+
+If you deploy an LWC that's embedded via Lightning Out on a VF/Site page (`c:easyAuraApp` → `$Lightning.createComponent`) and the browser keeps showing **stale behavior even after a hard refresh** — verify the deployed source is actually correct first:
+
+```powershell
+sf data query --query "SELECT Source FROM LightningComponentResource WHERE LightningComponentBundle.DeveloperName = '<name>' AND FilePath LIKE '%.html'" --use-tooling-api --target-org UST-Scholarships__dev --json
+```
+
+If the server-side source is already correct but the browser still renders the old version, this is **not a browser cache problem** — `Ctrl+Shift+R` / devtools "disable cache" / clearing localStorage does not fix it. The `auraCmpDef` endpoint serves LWC bundles with `Cache-Control: private, max-age=31536000, immutable`, keyed by a server-side "last recompile marker" (`_lrmc` query param on the bootstrap `easyAuraApp.app` request). Redeploying the LWC alone does **not** bump that marker, and the browser's own persistent Aura definition storage (IndexedDB-backed, survives normal reloads) will keep serving the old bundle indefinitely.
+
+**Fix:** make an actual content change to the Aura app that declares the `<aura:dependency>` for the changed LWC (e.g. `force-app/main/default/aura/easyAuraApp/easyAuraApp.app`) and redeploy it — a genuine byte diff, not a no-op redeploy of identical content, or the recompile marker won't bump. A one-line comment change is enough:
+
+```powershell
+# edit easyAuraApp.app (add/remove a comment, whitespace doesn't count reliably — content must actually differ), then:
+cci task run deploy --path force-app/main/default/aura/easyAuraApp --org dev
+```
+
+Verify by checking `list_network_requests` for a fresh `auraCmpDef` GET during page load (if it's missing entirely, the browser served the definition from IndexedDB without even hitting the network — confirms this is still the cache).
+
+---
+
 ## Building Thank-You Test Data in a Scratch Org
 
 Scratch orgs come with **no `Scholarship__c` records that have `Thank_You_Required__c` set** — every scholarship loaded by default has that field blank, so no portal user has any thank-you obligations out of the box. To manually test/iterate on the thank-you feature for a given portal user (a `Contact`), do this via `sf data` (not CumulusCI — this is one-off data setup, not a repeatable dataset):

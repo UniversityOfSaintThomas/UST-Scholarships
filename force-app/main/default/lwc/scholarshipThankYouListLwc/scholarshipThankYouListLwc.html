@@ -1,0 +1,47 @@
+<!-- Scholarship Thank You List Lwc — compact nav list, links into scholarshipThankYousLwc -->
+<template>
+    <template lwc:if={isLoading}>
+        <div class="slds-align_absolute-center slds-p-around_medium">
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </div>
+    </template>
+
+    <template lwc:else>
+        <div class="ty-nav">
+            <template lwc:if={hasError}>
+                <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+                    {errorMessage}
+                </div>
+            </template>
+
+            <template lwc:if={hasItems}>
+                <ul class="ty-nav-list">
+                    <template for:each={items} for:item="item">
+                        <li key={item.applicantId} class={item.rowClass}>
+                            <button
+                                type="button"
+                                class="ty-nav-row"
+                                data-id={item.applicantId}
+                                onclick={handleSelect}
+                            >
+                                <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                                    <span class="ty-nav-name">{item.scholarshipName}</span>
+                                    <span class={item.statusClass}>{item.thankYouStatus}</span>
+                                </div>
+                                <lightning-progress-bar
+                                    value={item.progressValue}
+                                    size="small"
+                                    class="ty-nav-progress"
+                                ></lightning-progress-bar>
+                            </button>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+
+            <template lwc:else>
+                <p class="slds-text-body_small">You have no outstanding thank-you letter requirements.</p>
+            </template>
+        </div>
+    </template>
+</template>

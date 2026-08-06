@@ -6,5 +6,6 @@
     <aura:dependency resource="c:summitEventsListView"/>
     <aura:dependency resource="c:scholarshipEligibleListView"/>
     <aura:dependency resource="c:scholarshipThankYousLwc"/>
+    <aura:dependency resource="c:scholarshipThankYouListLwc"/>
     <aura:dependency resource="lightning:flow"/>
 </aura:application>

@@ -37,10 +37,10 @@
 
                 <template lwc:if={hasItems}>
                     <template for:each={thankYouItems} for:item="item">
-                        <div key={item.applicantId} class="ty-card slds-box slds-m-bottom_small">
+                        <div key={item.applicantId} data-card-id={item.applicantId} class={item.cardClass}>
                             <!-- Card Header -->
                             <div class="ty-card-header slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-                                <div class="slds-col">
+                                <div class="ty-card-name-col slds-col">
                                     <span class="slds-text-heading_small">{item.scholarshipName}</span>
                                     <template lwc:if={item.scholarshipAccountName}>
                                         <span class="ty-donor-name slds-m-left_x-small">
@@ -48,7 +48,7 @@
                                         </span>
                                     </template>
                                 </div>
-                                <div class="slds-col slds-has-flexi-truncate slds-text-align_right">
+                                <div class="ty-card-badge-col slds-col slds-text-align_right">
                                     <span class={item.statusClass}>{item.thankYouStatus}</span>
                                 </div>
                             </div>
@@ -64,6 +64,7 @@
                             <!-- Expand / Collapse Button -->
                             <div class="slds-m-top_x-small">
                                 <button
+                                    type="button"
                                     class="slds-button slds-button_brand"
                                     data-id={item.applicantId}
                                     onclick={handleToggleEditor}
@@ -182,6 +183,7 @@
                                     <template lwc:if={item.isEditable}>
                                         <div class="slds-grid slds-grid_align-end slds-m-top_small">
                                             <button
+                                                type="button"
                                                 class="slds-button slds-button_neutral slds-m-right_x-small"
                                                 data-id={item.applicantId}
                                                 onclick={handleTogglePreview}
@@ -189,6 +191,7 @@
                                                 {item.previewLabel}
                                             </button>
                                             <button
+                                                type="button"
                                                 class="slds-button slds-button_neutral slds-m-right_x-small"
                                                 data-id={item.applicantId}
                                                 onclick={handleSaveDraft}
@@ -196,6 +199,7 @@
                                                 Save Draft
                                             </button>
                                             <button
+                                                type="button"
                                                 class="slds-button slds-button_brand"
                                                 data-id={item.applicantId}
                                                 onclick={handleSubmit}
@@ -252,6 +256,7 @@
                     <!-- Toggle button — shown when editable OR to view a submitted letter -->
                     <div class="slds-m-top_x-small">
                         <button
+                            type="button"
                             class="slds-button slds-button_brand"
                             onclick={handleRecordToggleEditor}
                         >
@@ -361,18 +366,21 @@
                                 <!-- Action Buttons -->
                                 <div class="slds-grid slds-grid_align-end slds-m-top_small">
                                     <button
+                                        type="button"
                                         class="slds-button slds-button_neutral slds-m-right_x-small"
                                         onclick={handleRecordTogglePreview}
                                     >
                                         {singleItem.previewLabel}
                                     </button>
                                     <button
+                                        type="button"
                                         class="slds-button slds-button_neutral slds-m-right_x-small"
                                         onclick={handleRecordSaveDraft}
                                     >
                                         Save Draft
                                     </button>
                                     <button
+                                        type="button"
                                         class="slds-button slds-button_brand"
                                         onclick={handleRecordSubmit}
                                     >

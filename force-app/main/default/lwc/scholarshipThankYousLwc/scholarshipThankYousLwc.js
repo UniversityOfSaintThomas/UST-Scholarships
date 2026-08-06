@@ -13,6 +13,14 @@
  * NOTE: ShowToastEvent does NOT fire in Lightning Out (VF context).
  * All user feedback uses the inline feedbackMessage banner instead.
  *
+ * DEEP LINK / CROSS-WIDGET NAVIGATION (portal mode only):
+ *   On load, a `?applicantId=<id>` query param opens that item's editor and
+ *   scrolls it into view. The same happens live if a sibling widget (e.g.
+ *   scholarshipThankYouListLwc used as secondary nav on this same page)
+ *   dispatches a `window` CustomEvent named THANK_YOU_SELECT_EVENT with
+ *   `detail.applicantId` — this is how two independently Lightning-Out-mounted
+ *   components talk to each other, since neither is a DOM ancestor of the other.
+ *
  * Created: 2026-03-26
  */
 import { LightningElement, api, track } from 'lwc';
@@ -23,6 +31,7 @@ import submitThankYouLetter from '@salesforce/apex/ScholarshipThankYouController
 import getPreviousLetters   from '@salesforce/apex/ScholarshipThankYouController.getPreviousLetters';
 
 const MIN_LENGTH        = 100;
+const THANK_YOU_SELECT_EVENT = 'ustty_selectapplicant';
 const STATUS_CLASS_MAP  = {
     'Not Started': 'slds-badge slds-badge_lightest ty-badge-not-started',
     'In Progress':  'slds-badge ty-badge-in-progress',
@@ -52,12 +61,22 @@ export default class ScholarshipThankYousLwc extends LightningElement {
     connectedCallback() {
         if (this.contactId) {
             this._loadList();
+            window.addEventListener(THANK_YOU_SELECT_EVENT, this._handleExternalSelect);
         } else if (this.recordId) {
             this._loadSingle();
         } else {
             this.isLoading = false;
         }
     }
+
+    disconnectedCallback() {
+        window.removeEventListener(THANK_YOU_SELECT_EVENT, this._handleExternalSelect);
+    }
+
+    // Bound as a class field so the same function reference can be removed on teardown.
+    _handleExternalSelect = (event) => {
+        this._openApplicantFromId(event && event.detail && event.detail.applicantId);
+    };
 
     // ─── Mode Getters ────────────────────────────────────────────────────────
 
@@ -96,12 +115,65 @@ export default class ScholarshipThankYousLwc extends LightningElement {
         getThankYouItems({ contactId: this.contactId })
             .then(items => {
                 this.thankYouItems = items.map(i => this._enrichItem(i));
+                const deepLinkId = new URLSearchParams(window.location.search).get('applicantId');
+                if (deepLinkId) this._openApplicantFromId(deepLinkId);
             })
             .catch(err => {
                 this._showFeedback('error', this._extractError(err));
             })
             .finally(() => {
                 this.isLoading = false;
+            });
+    }
+
+    // Opens one item's editor (closing any other open one) and scrolls its card into view.
+    // Used for the ?applicantId= deep link and for cross-widget selection events.
+    _openApplicantFromId(id) {
+        if (!id || !this._findItem(id)) return;
+        this._setEditorOpen(id, true);
+        Promise.resolve().then(() => {
+            const card = this.template.querySelector(`[data-card-id="${id}"]`);
+            if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+
+    // Opens (or closes) one item's editor; opening always closes all others.
+    // Lazy-loads previous letters for the item being opened.
+    _setEditorOpen(id, opening) {
+        this.thankYouItems = this.thankYouItems.map(i => {
+            const editorOpen = i.applicantId === id ? opening : false;
+            return { ...i, editorOpen, cardClass: this._cardClass(editorOpen) };
+        });
+        if (opening) this._loadPreviousLettersFor(id);
+    }
+
+    // Purple-outlines the card whose editor is currently open; others keep the default gray.
+    _cardClass(editorOpen) {
+        const base = 'ty-card slds-box slds-m-bottom_small';
+        return editorOpen ? `${base} ty-card_active` : base;
+    }
+
+    _loadPreviousLettersFor(id) {
+        if (this._prevLetterCache[id]) {
+            this._updateItem(id, {
+                previousLetters:    this._prevLetterCache[id],
+                hasPreviousLetters: this._prevLetterCache[id].length > 0
+            });
+            return;
+        }
+        getPreviousLetters({ contactId: this.contactId, excludeApplicantId: id })
+            .then(prev => {
+                this._prevLetterCache[id] = (prev || []).map(p => ({
+                    ...p,
+                    formattedDate: this._formatDate(p.submittedDate)
+                }));
+                this._updateItem(id, {
+                    previousLetters:    this._prevLetterCache[id],
+                    hasPreviousLetters: this._prevLetterCache[id].length > 0
+                });
+            })
+            .catch(() => {
+                // Non-fatal — previous letters are a convenience feature
             });
     }
 
@@ -136,6 +208,7 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             isEditable,
             isReadOnly,
             editorOpen:        false,
+            cardClass:         this._cardClass(false),
             showPreview:       false,
             showPhotoRights:   raw.photoRightsAccepted === true,
             draftText:         raw.thankYouLetter || '',
@@ -226,37 +299,7 @@ export default class ScholarshipThankYousLwc extends LightningElement {
         const id   = event.currentTarget.dataset.id;
         const item = this._findItem(id);
         if (!item) return;
-
-        const opening = !item.editorOpen;
-
-        // Close all others, open this one
-        this.thankYouItems = this.thankYouItems.map(i => ({
-            ...i,
-            editorOpen: i.applicantId === id ? opening : false
-        }));
-
-        // Lazy-load previous letters when expanding
-        if (opening && !this._prevLetterCache[id]) {
-            getPreviousLetters({ contactId: this.contactId, excludeApplicantId: id })
-                .then(prev => {
-                    this._prevLetterCache[id] = (prev || []).map(p => ({
-                        ...p,
-                        formattedDate: this._formatDate(p.submittedDate)
-                    }));
-                    this._updateItem(id, {
-                        previousLetters:    this._prevLetterCache[id],
-                        hasPreviousLetters: this._prevLetterCache[id].length > 0
-                    });
-                })
-                .catch(() => {
-                    // Non-fatal — previous letters are a convenience feature
-                });
-        } else if (opening && this._prevLetterCache[id]) {
-            this._updateItem(id, {
-                previousLetters:    this._prevLetterCache[id],
-                hasPreviousLetters: this._prevLetterCache[id].length > 0
-            });
-        }
+        this._setEditorOpen(id, !item.editorOpen);
     }
 
     handlePreviousLetterSelect(event) {
@@ -310,6 +353,7 @@ export default class ScholarshipThankYousLwc extends LightningElement {
                 this._updateItem(id, {
                     ...this._enrichItem(updated),
                     editorOpen:  true,
+                    cardClass:   this._cardClass(true),
                     showPreview: item.showPreview,
                     previousLetters: item.previousLetters,
                     hasPreviousLetters: item.hasPreviousLetters
@@ -351,7 +395,8 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             .then(updated => {
                 this._updateItem(id, {
                     ...this._enrichItem(updated),
-                    editorOpen: true  // keep open so student can see confirmation
+                    editorOpen: true,  // keep open so student can see confirmation
+                    cardClass:  this._cardClass(true)
                 });
                 this._showFeedback('success', 'Thank-you letter submitted! Thank you for taking the time to write to your scholarship donor.');
             })

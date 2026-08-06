@@ -3,10 +3,46 @@
  * Created: 2026-03-26
  */
 
+/* UST brand purple. Not an SLDS/Lightning design token in this org (Lightning
+   Out defines --lwc-brandPrimary as the stock Salesforce blue, and the portal's
+   purple buttons/headings come from the university's own Capricorn CSS, not
+   SLDS), so hardcoded here rather than a var() fallback chain that would never
+   resolve to it. Sourced from the existing .warning color in the "scholarships"
+   static resource — update this single value if the exact brand hex differs. */
+:host {
+    --ty-brand-color: #510c76;
+}
+
 /* ── Card Layout ─────────────────────────────────────────── */
 .ty-card {
+    box-sizing: border-box;
     border-radius: 4px;
     background: #fff;
+    border: 2px solid #dddbda; /* matches slds-box's default gray; fixed width avoids layout shift when active */
+    overflow: hidden; /* defensive backstop, not the primary fix — see .ty-card-badge-col */
+}
+
+/* The header row previously put slds-has-flexi-truncate (flex-basis: 0%,
+   flex-grow: 0) on the badge column, which collapsed its flex box to ~0 width
+   and let the pill itself render outside it, clipped at the card edge.
+   slds-has-flexi-truncate alone (without slds-grow) doesn't work on the name
+   column either — flex-grow stays 0 so it never claims space, collapsing to
+   near-zero and wrapping one word per line. These two rules do it correctly:
+   the name column grows to fill available space and shrinks/wraps if the
+   name is long; the badge column never shrinks off its natural width. */
+.ty-card-name-col {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ty-card-badge-col {
+    flex-shrink: 0;
+}
+
+/* Applied to the card whose editor is currently open, to distinguish it from
+   the other (gray, slds-box default) cards in the list. */
+.ty-card_active {
+    border-color: var(--ty-brand-color);
 }
 
 .ty-card-header {
@@ -26,7 +62,7 @@
 }
 
 .ty-badge-in-progress {
-    background-color: #0070d2;
+    background-color: var(--ty-brand-color);
     color: #fff;
 }
 
