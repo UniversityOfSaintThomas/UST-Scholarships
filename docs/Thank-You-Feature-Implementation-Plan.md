@@ -6,6 +6,67 @@
 
 ---
 
+## Status Checklist (as of 2026-08-06)
+
+### Phase 1 — Data Foundation
+- [x] `Thank_You_Status__c` (Picklist: Not Started/In Progress/Submitted/Complete) on `Scholarship_Applicant__c`
+- [x] `Thank_You_Letter__c` on `Scholarship_Applicant__c` — **upgraded beyond plan**: built as Long Text Area, later converted to **Rich Text Area** so the LWC could use `lightning-input-rich-text`/`lightning-formatted-rich-text`
+- [x] `Thank_You_Submitted_Date__c` (DateTime)
+- [x] `Thank_You_Photo_Rights_Accepted__c` (Checkbox)
+- [ ] `Thank_You_Status__c` (DR campaign-level status) on **`Scholarship__c`** — never created; picklist values were never confirmed with the DR team (Open Question #1, still open)
+- [x] `UST_Scholarship_Applicant` permission set — read/edit on all 4 new `Scholarship_Applicant__c` fields, read-only on the `Scholarship__c` support fields
+- [x] `UST_Scholarship_Admin` permission set — read/edit on all of the above
+
+### Phase 2 — Apex Controller
+- [x] `ScholarshipThankYouController.cls` — all 5 planned methods present (`getThankYouItems`, `getThankYouItem`, `saveThankYouDraft`, `submitThankYouLetter`, `getPreviousLetters`)
+- [x] `ScholarshipThankYouController_TEST.cls` — 15 tests, 89% coverage (target was ≥75%)
+- [x] Auth guard (`assertContactOwnership`, admin bypass)
+- [x] Data-completeness check (`hasDataWarning`/`dataWarningMessage` when FA code or donor Account is missing)
+- [x] Status-transition guard (edits blocked once `Complete`)
+- [x] Minimum letter length (100 chars) enforced server-side and client-side — ⚠️ known gap: the server check now measures raw HTML length (rich text), so it's more lenient than the client's stripped-plain-text check; not yet tightened
+
+### Phase 3 — LWC (Portal List Mode)
+- [x] `scholarshipThankYousLwc` built out — portal list, status badges, inline editor
+- [x] `<aura:dependency resource="c:scholarshipThankYousLwc"/>` added to `easyAuraApp`
+- [x] `ScholarshipThankYou.page` built
+- [x] Deployed and verified live in the portal as a student user (Thomas Magnum test account)
+- [ ] Nav link from `ScholarshipHome.page` to `ScholarshipThankYou.page` (marked optional in the original plan) — not added
+
+### Phase 4 — LWC (Record Page Mode)
+- [x] Record-page support (`@api recordId`, single-item fetch)
+- [x] `js-meta.xml` targets include `lightning__RecordPage`
+- [ ] **Not actually placed on the `Scholarship_Applicant__c` record page** — no FlexiPage in the repo references `scholarshipThankYousLwc`; the component is ready but nobody has dragged it into App Builder yet
+- [ ] Not tested live as a DR/admin user this session (only the portal/student flow was verified in-browser)
+
+### Phase 5 — Photo Upload
+- [x] `lightning-file-upload` added to the letter panel
+- [x] `Thank_You_Photo_Rights_Accepted__c` checkbox wired up
+- [~] File-to-record linking uses the standard `record-id={applicantId}` pattern but was never exercised end-to-end (no actual file was uploaded during testing)
+
+### Phase 6 — DR Staff Dashboard (Future / Scope TBD in the original plan)
+- [ ] List view / report of submitted TY letters per scholarship
+- [ ] DR review/edit interface with logging
+- [ ] Batch export for vendor mailing
+- [ ] Automated status → Complete after mailing confirmation
+
+### Open Questions (§10) — resolution status
+1. `Thank_You_Status__c` picklist values on `Scholarship__c` — **still open**, field was never built
+2. Should `Optional` TY scholarships show by default? — **resolved: yes** (`TY_REQUIRED_VALUES` includes `Yes` and `Optional`)
+3. Can students re-submit/edit after submitting? — **resolved by implementation**: no, only `Not Started`/`In Progress` are student-editable; DR can still edit via the record page unless status is `Complete`
+4. Which award statuses trigger TY? — **resolved: both** `Accepted` and `Awarded`
+5. Is photo upload required, or scholarship-flag controlled? — **resolved by implementation**: always optional for every scholarship; no `Require_Photo__c` flag was built
+6. Standalone VF page or a tab on an existing page? — **resolved: standalone** `ScholarshipThankYou.page`
+7. Will DR need a native Salesforce review/edit UI? — **still open**, this is Phase 6
+
+### Built beyond the original plan this session
+- [x] `Thank_You_Letter__c` converted to Rich Text Area (not in original scope — plan called for plain Long Text Area)
+- [x] New `scholarshipThankYouListLwc` — compact nav list with per-scholarship progress bar, deep-linking via `?applicantId=`, and cross-widget same-page navigation with `scholarshipThankYousLwc`
+- [x] Brand-purple styling, active-card outline, and several layout/CSS bug fixes (badge overflow, rich-text toolbar padding/bullet, button-triggers-page-reload bug)
+- [x] Documented a significant Lightning Out component-caching gotcha (in `AGENTS.md` and the shared agent onboarding skill)
+- [x] `AGENTS.md` / `CLAUDE.md` added to the repo (didn't exist before this branch)
+
+---
+
 ## 1. Overview
 
 This plan describes how to build the scholarship thank you (TY) letter feature inside the existing UST Scholarships portal. The solution centers on a single LWC (`scholarshipThankYousLwc`) that operates in two distinct modes:
