@@ -35,6 +35,12 @@
     min-width: 0;
 }
 
+.ty-card-name-col .slds-text-heading_medium {
+    border: none;
+    margin: 0 0 .5rem 0;
+    padding: 0;
+}
+
 .ty-card-badge-col {
     flex-shrink: 0;
 }
@@ -48,11 +54,6 @@
 .ty-card-header {
     flex-wrap: wrap;
     gap: 0.5rem;
-}
-
-.ty-donor-name {
-    font-size: 0.875rem;
-    color: #514f4d;
 }
 
 /* ── Status Badges ───────────────────────────────────────── */

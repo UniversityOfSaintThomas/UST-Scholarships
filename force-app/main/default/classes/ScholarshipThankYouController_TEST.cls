@@ -393,5 +393,62 @@ private class ScholarshipThankYouController_TEST {
         System.assertNotEquals(null, options);
         System.assertEquals(0, options.size());
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // uploadThankYouPhoto
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void testUploadThankYouPhoto_attachesContentVersion() {
+        Scholarship_Applicant__c app = getAcceptedApp();
+        String base64Data = EncodingUtil.base64Encode(Blob.valueOf('fake image bytes'));
+
+        Test.startTest();
+        ScholarshipThankYouController.uploadThankYouPhoto(app.Id, 'photo.png', base64Data);
+        Test.stopTest();
+
+        List<ContentDocumentLink> links = [
+            SELECT Id, ContentDocument.Title
+            FROM ContentDocumentLink
+            WHERE LinkedEntityId = :app.Id
+        ];
+        System.assertEquals(1, links.size(), 'Photo should be linked to the applicant record');
+        System.assertEquals('photo', links[0].ContentDocument.Title);
+    }
+
+    @isTest
+    static void testUploadThankYouPhoto_blankFileThrows() {
+        Scholarship_Applicant__c app = getAcceptedApp();
+        Boolean threw = false;
+
+        Test.startTest();
+        try {
+            ScholarshipThankYouController.uploadThankYouPhoto(app.Id, '', '');
+        } catch (AuraHandledException e) {
+            threw = true;
+        }
+        Test.stopTest();
+
+        System.assert(threw, 'Should throw when no file data is supplied');
+    }
+
+    @isTest
+    static void testUploadThankYouPhoto_completeLockThrows() {
+        Scholarship_Applicant__c app = getAcceptedApp();
+        app.Thank_You_Status__c = 'Complete';
+        update app;
+        String base64Data = EncodingUtil.base64Encode(Blob.valueOf('fake image bytes'));
+
+        Boolean threw = false;
+        Test.startTest();
+        try {
+            ScholarshipThankYouController.uploadThankYouPhoto(app.Id, 'photo.png', base64Data);
+        } catch (AuraHandledException e) {
+            threw = true;
+        }
+        Test.stopTest();
+
+        System.assert(threw, 'Should throw when status is Complete (DR lock)');
+    }
 }
 

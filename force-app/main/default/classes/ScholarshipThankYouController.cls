@@ -163,6 +163,32 @@ public with sharing class ScholarshipThankYouController {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // WRITE — Photo Upload
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Uploads a thank-you photo and attaches it to the Scholarship_Applicant__c
+     * record. Used by the portal (Lightning Out) editor, which cannot rely on
+     * lightning-file-upload's built-in upload mechanism — that component never
+     * fires its upload request when embedded via Lightning Out on a Visualforce
+     * Site page, so the file is instead read client-side and sent here as base64.
+     */
+    @AuraEnabled
+    public static void uploadThankYouPhoto(String applicantId, String fileName, String base64Data) {
+        if (String.isBlank(fileName) || String.isBlank(base64Data)) {
+            throw new AuraHandledException('A photo file is required.');
+        }
+
+        Scholarship_Applicant__c app = getWritableApplicant(applicantId);
+
+        ContentVersion version = new ContentVersion();
+        version.PathOnClient = fileName;
+        version.VersionData = EncodingUtil.base64Decode(base64Data);
+        version.FirstPublishLocationId = app.Id;
+        insert version;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // READ — Previous Letters (for re-use feature)
     // ─────────────────────────────────────────────────────────────────────────
 

@@ -41,11 +41,9 @@
                             <!-- Card Header -->
                             <div class="ty-card-header slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
                                 <div class="ty-card-name-col slds-col">
-                                    <span class="slds-text-heading_small">{item.scholarshipName}</span>
+                                    <h3 class="slds-text-heading_medium">{item.scholarshipName}</h3>
                                     <template lwc:if={item.scholarshipAccountName}>
-                                        <span class="ty-donor-name slds-m-left_x-small">
-                                            | Donor: {item.scholarshipAccountName}
-                                        </span>
+                                        <p class="slds-text-body_regular">Donor: {item.scholarshipAccountName}</p>
                                     </template>
                                 </div>
                                 <div class="ty-card-badge-col slds-col slds-text-align_right">
@@ -142,16 +140,24 @@
 
                                     <!-- Photo Upload -->
                                     <template lwc:if={item.isEditable}>
-                                        <div class="slds-m-bottom_small">
-                                            <lightning-file-upload
-                                                label="Upload a Photo (optional)"
-                                                name="thankYouPhoto"
-                                                accept={acceptedFormats}
-                                                record-id={item.applicantId}
-                                                onuploadfinished={handlePhotoUpload}
-                                                data-id={item.applicantId}
-                                                multiple="false"
-                                            ></lightning-file-upload>
+                                        <div class="slds-form-element slds-m-bottom_small">
+                                            <label class="slds-form-element__label" for={item.photoInputId}>Upload a Photo (optional)</label>
+                                            <div class="slds-form-element__control">
+                                                <input
+                                                    type="file"
+                                                    id={item.photoInputId}
+                                                    data-id={item.applicantId}
+                                                    accept=".jpg,.jpeg,.png,.gif,.pdf"
+                                                    disabled={item.photoUploading}
+                                                    onchange={handlePhotoUpload}
+                                                />
+                                            </div>
+                                            <template lwc:if={item.photoUploading}>
+                                                <p class="slds-form-element__help">Uploading…</p>
+                                            </template>
+                                            <template lwc:if={item.photoFileName}>
+                                                <p class="slds-form-element__help">Uploaded: {item.photoFileName}</p>
+                                            </template>
                                         </div>
 
                                         <!-- Photo rights checkbox -->

@@ -29,6 +29,7 @@ import getThankYouItem      from '@salesforce/apex/ScholarshipThankYouController
 import saveThankYouDraft    from '@salesforce/apex/ScholarshipThankYouController.saveThankYouDraft';
 import submitThankYouLetter from '@salesforce/apex/ScholarshipThankYouController.submitThankYouLetter';
 import getPreviousLetters   from '@salesforce/apex/ScholarshipThankYouController.getPreviousLetters';
+import uploadThankYouPhoto  from '@salesforce/apex/ScholarshipThankYouController.uploadThankYouPhoto';
 
 const MIN_LENGTH        = 100;
 const THANK_YOU_SELECT_EVENT = 'ustty_selectapplicant';
@@ -220,6 +221,9 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             charCountLabel:    this._charCountLabel(raw.thankYouLetter),
             previousSelectId:  `prev-${raw.applicantId}`,
             photoCheckboxId:   `photo-${raw.applicantId}`,
+            photoInputId:      `photo-input-${raw.applicantId}`,
+            photoFileName:     '',
+            photoUploading:    false,
             formattedSubmittedDate: this._formatDate(raw.submittedDate),
             photoRightsLabel:  raw.photoRightsAccepted ? 'Accepted' : 'Not accepted'
         };
@@ -408,12 +412,38 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             });
     }
 
+    // lightning-file-upload never fires its upload request when embedded via
+    // Lightning Out on this VF Site page, so the portal editor uses a plain
+    // file input and sends the file to Apex as base64 instead.
     handlePhotoUpload(event) {
-        const id = event.currentTarget.dataset.id;
-        if (event.detail.files && event.detail.files.length > 0) {
-            this._updateItem(id, { showPhotoRights: true });
-            this._showFeedback('success', 'Photo uploaded successfully.');
-        }
+        const id   = event.currentTarget.dataset.id;
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        this._updateItem(id, { photoUploading: true });
+        this._readFileAsBase64(file)
+            .then(base64Data => uploadThankYouPhoto({ applicantId: id, fileName: file.name, base64Data }))
+            .then(() => {
+                this._updateItem(id, {
+                    showPhotoRights: true,
+                    photoFileName:   file.name,
+                    photoUploading:  false
+                });
+                this._showFeedback('success', 'Photo uploaded successfully.');
+            })
+            .catch(err => {
+                this._updateItem(id, { photoUploading: false });
+                this._showFeedback('error', this._extractError(err));
+            });
+    }
+
+    _readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload  = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
     }
 
     handlePhotoRightsChange(event) {
