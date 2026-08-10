@@ -4,5 +4,9 @@
     <availableInTouch>false</availableInTouch>
     <confirmationTokenRequired>false</confirmationTokenRequired>
     <label>ScholarshipThankYou</label>
+    <packageVersions>
+        <majorNumber>1</majorNumber>
+        <minorNumber>122</minorNumber>
+        <namespace>hed</namespace>
+    </packageVersions>
 </ApexPage>
-

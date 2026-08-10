@@ -31,6 +31,11 @@
                 <default>false</default>
                 <label>UG Application Documents Display LWC</label>
             </value>
+            <value>
+                <fullName>c:scholarshipThankYouListLwc</fullName>
+                <default>false</default>
+                <label>Scholarship Thank Yous</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

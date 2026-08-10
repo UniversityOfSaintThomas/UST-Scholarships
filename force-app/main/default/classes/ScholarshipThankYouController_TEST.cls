@@ -451,4 +451,3 @@ private class ScholarshipThankYouController_TEST {
         System.assert(threw, 'Should throw when status is Complete (DR lock)');
     }
 }
-

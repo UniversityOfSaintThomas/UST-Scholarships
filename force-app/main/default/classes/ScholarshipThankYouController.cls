@@ -389,4 +389,3 @@ public with sharing class ScholarshipThankYouController {
         @AuraEnabled public Datetime submittedDate;
     }
 }
-

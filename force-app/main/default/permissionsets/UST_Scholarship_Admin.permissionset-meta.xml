@@ -250,6 +250,26 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
+        <editable>true</editable>
+        <field>Scholarship_Applicant__c.Thank_You_Letter__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Scholarship_Applicant__c.Thank_You_Photo_Rights_Accepted__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Scholarship_Applicant__c.Thank_You_Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Scholarship_Applicant__c.Thank_You_Submitted_Date__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
         <editable>false</editable>
         <field>Scholarship_Applicant__c.UG_Scholarship_App_Review_Batch__c</field>
         <readable>true</readable>
@@ -557,26 +577,6 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Scholarship__c.Thank_You_Required__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Scholarship_Applicant__c.Thank_You_Status__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Scholarship_Applicant__c.Thank_You_Letter__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Scholarship_Applicant__c.Thank_You_Submitted_Date__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Scholarship_Applicant__c.Thank_You_Photo_Rights_Accepted__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
