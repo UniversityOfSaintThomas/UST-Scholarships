@@ -8,7 +8,7 @@ Instructions for AI coding agents working in this repository. Read this file bef
 
 The current branch (`thank_you_lwc`) is **active, in-progress work**. Two features are being developed together on it:
 
-1. **Donor Thank-You LWC** — a student-facing thank-you letter workflow (`scholarshipThankYousLwc`, `ScholarshipThankYouController`). Requirements and delivery notes live in `docs/Student-Scholarship-Thank-You-Feature.md` and `docs/Thank-You-Feature-Implementation-Plan.md`.
+1. **Donor Thank-You LWC** — a student-facing thank-you letter workflow (`scholarshipThankYousLwc`, `ScholarshipThankYouController`). Requirements and delivery notes live in `docs/Student-Scholarship-Thank-You-Feature.md` and `docs/Thank-You-Feature-Implementation-Plan.md`. **Status: demo-ready as of 2026-08-10** — portal flow and photo upload have both been verified live end-to-end. Expect scope/UX changes after stakeholder demo feedback; check the implementation plan's status checklist before assuming any given piece is final.
 2. **Generalizing `EASY_Widget__c` to embed arbitrary LWCs** — `EasyWidget.component` (legacy Visualforce) is being made more universal so any LWC can be embedded via a new `c:EasyLwc` Visualforce component + `Lightning_Web_Component__c` field on `EASY_Widget__c`, instead of hardcoding one `<c:ComponentName>` reference per `Widget_Type__c` value. Recent related work:
    - `force-app/main/default/components/EasyLwc.component` — new generic Lightning Out bridge component; renders whatever LWC name is stored in `widget.Lightning_Web_Component__c`
    - `EASY_Widget__c` fields: `Lightning_Web_Component__c`, `Widget_Type__c`, new `Student_Types__c` (backed by the new `Student_Types` global value set)
@@ -75,7 +75,7 @@ Scratch orgs come with **no `Scholarship__c` records that have `Thank_You_Requir
    sf data query --query "SELECT Id, Name, Email FROM Contact WHERE LastName = 'Magnum'" --target-org UST-Scholarships__dev --result-format human
    ```
 
-2. **Pick 2-3 `Scholarship__c` records and turn on `Thank_You_Required__c`.** Also populate `Financial_Aid_Code__c` and `Scholarship_Account__c` (lookup to `Account` — the donor) on the same records. `ScholarshipThankYouController.buildItem()` (`force-app/main/default/classes/ScholarshipThankYouController.cls:279-290`) surfaces a "Staff Notice" data-completeness warning banner on the letter card whenever either is blank — harmless, but noisy when you just want to test the write/submit flow:
+2. **Pick 2-3 `Scholarship__c` records and turn on `Thank_You_Required__c`.** Also populate `Financial_Aid_Code__c` and `Scholarship_Account__c` (lookup to `Account` — the donor) on the same records. `ScholarshipThankYouController.buildItem()` (`force-app/main/default/classes/ScholarshipThankYouController.cls`, search for `private static ThankYouItem buildItem` — line numbers shift as the class grows) surfaces a "Staff Notice" data-completeness warning banner on the letter card whenever either is blank — harmless, but noisy when you just want to test the write/submit flow. Optionally set `Thank_You_Sample_Letter__c` (Rich Text) on the scholarship to test the custom-example-text path instead of the hardcoded fallback:
    ```powershell
    sf data create record --sobject Account --values "Name='Some Donor Fund'" --target-org UST-Scholarships__dev
 
@@ -95,3 +95,5 @@ Scratch orgs come with **no `Scholarship__c` records that have `Thank_You_Requir
    ```
 
 Don't set `Thank_You_Status__c = 'Complete'` on test data unless you specifically want to test the read-only/locked state — `Complete` records reject further edits from both `saveThankYouDraft` and `submitThankYouLetter` (see the "Status lock" note in `docs/ARCHITECTURE.md`).
+
+To test the photo-upload path, upload a real file through the portal UI in a browser (Chrome DevTools MCP `upload_file` works well) rather than seeding `Thank_You_Photo_Orig_Filename__c` directly — that field is meant to be set by `uploadThankYouPhoto`/`recordThankYouPhotoFilename`, and hand-setting it without a matching `ContentVersion` will show a "photo received" confirmation for a file that doesn't actually exist.

@@ -58,6 +58,7 @@ EASY_Widget__c                  (integration object for EASY application system)
 | `Recommender2_Option__c` | Picklist | Second recommender config |
 | `Essay_1_Text__c` / `Essay_2_Text__c` | Long Text | Essay prompts |
 | `Question_1_Text__c` … `Question_4_Text__c` | Text | Short-answer prompts |
+| `Thank_You_Sample_Letter__c` | Rich Text (32,768) | Optional per-scholarship "example opening" shown in the TY portal editor; the LWC falls back to a hardcoded default when blank |
 | `Org_Wide_Email_Id__c` | Text | Email sender identity |
 | `Submit_Scholarship_Email_Template_Id__c` | Text | Email template on submit |
 | `Application_Controls__c` | Lookup → `Application_Control__c` | EASY integration link |
@@ -77,9 +78,10 @@ EASY_Widget__c                  (integration object for EASY application system)
 | `Thank_You_Status__c` | Picklist | `Not Started` / `In Progress` / `Submitted` / `Complete` |
 | `Thank_You_Letter__c` | Rich Text Area (131,072) | Student's written letter, stored as HTML |
 | `Thank_You_Submitted_Date__c` | DateTime | Stamp when student submits |
-| `Thank_You_Photo_Rights_Accepted__c` | Checkbox | Photo/quote rights consent |
+| `Thank_You_Photo_Rights_Accepted__c` | Checkbox | Photo/quote rights consent — persisted on both `saveThankYouDraft` and `submitThankYouLetter` |
+| `Thank_You_Photo_Orig_Filename__c` | Text(200) | Original filename of the uploaded TY photo, set by `uploadThankYouPhoto`/`recordThankYouPhotoFilename`. Drives the "we received your photo" confirmation so the student can tell their upload worked without re-querying Files. |
 
-> ⚠️ `Thank_You_Letter__c` is a Rich Text Area (Long Text Area subtype) — it **cannot** be used in a SOQL `WHERE` clause. Always query without it and filter in Apex. Its value is HTML, rendered via `lightning-input-rich-text` (edit) and `lightning-formatted-rich-text` (preview/read-only) in `scholarshipThankYousLwc` — never bind it into raw markup manually.
+> ⚠️ `Thank_You_Letter__c` is a Rich Text Area (Long Text Area subtype) — it **cannot** be used in a SOQL `WHERE` clause. Always query without it and filter in Apex. Its value is HTML, rendered via `lightning-input-rich-text` (edit) and `lightning-formatted-rich-text` (preview/read-only) in `scholarshipThankYousLwc` — never bind it into raw markup manually. The same applies to `Scholarship__c.Thank_You_Sample_Letter__c`.
 
 ---
 
@@ -173,9 +175,11 @@ All follow the same pattern: a constructor that calls `ScholarshipSharedUtilitie
 |---|---|---|
 | `getThankYouItems(contactId)` | No | Portal list: all TY items for a student |
 | `getThankYouItem(applicantId)` | No | Record page: single TY item detail |
-| `saveThankYouDraft(applicantId, letterText)` | No | Saves draft, advances status to `In Progress` |
+| `saveThankYouDraft(applicantId, letterText, photoRightsAccepted)` | No | Saves draft, advances status to `In Progress`; `photoRightsAccepted` is nullable so callers can omit it, but the portal always passes the current checkbox state so the answer isn't lost before Submit |
 | `submitThankYouLetter(applicantId, letterText, photoRightsAccepted)` | No | Final submit; enforces 100-char minimum |
 | `getPreviousLetters(contactId, excludeApplicantId)` | Yes | Load prior submitted letters for re-use |
+| `uploadThankYouPhoto(applicantId, fileName, base64Data)` | No | Portal-mode photo upload — reads the file client-side and inserts `ContentVersion` here because `lightning-file-upload` doesn't work in Lightning Out (see Known Gotchas). Also sets `Thank_You_Photo_Orig_Filename__c`. |
+| `recordThankYouPhotoFilename(applicantId, fileName)` | No | Record-page mode only — `lightning-file-upload` already inserted the file there; this just persists the filename for the same "photo received" confirmation UI |
 
 **Auth guard:** All write methods verify the `Contact__c` on the applicant record matches the current user's Contact. System Administrators bypass this check.
 
@@ -214,15 +218,17 @@ All follow the same pattern: a constructor that calls `ScholarshipSharedUtilitie
 
 #### Portal Mode (contactId)
 - Lists all thank-you requirements for the student
-- Expandable editor per card: textarea, character count, preview toggle, photo rights checkbox
-- Save Draft and Submit buttons
+- Expandable editor per card: textarea, character count, preview toggle, example toggle (chevron text-link, per-scholarship `Thank_You_Sample_Letter__c` or hardcoded fallback), photo upload + "photo received" confirmation, photo rights checkbox
+- Save Draft and Submit buttons — both persist the photo-rights checkbox answer
 - "Re-use Previous Letter" dropdown (loads past submissions)
 - Inline feedback banner (replaces `ShowToastEvent`)
+- Photo upload uses a plain `<input type="file">` + base64-to-Apex, **not** `lightning-file-upload` (see Known Gotchas)
 
 #### Record Page Mode (recordId)
 - Displays TY detail for the single `Scholarship_Applicant__c` record
 - Shows status badge, letter text, submission date, photo rights
 - Editable when status is not `Complete`
+- Photo upload here uses `lightning-file-upload` normally (this mode runs in native Lightning Experience, unaffected by the Lightning Out bug) — `handleRecordPhotoUpload` additionally calls `recordThankYouPhotoFilename` so the "photo received" confirmation matches the portal
 
 ### `selectApplicationControlsLwc`
 
@@ -255,6 +261,7 @@ Grants portal applicants restricted access:
 | `Thank_You_Letter__c` | Read/Edit | Read/Edit |
 | `Thank_You_Submitted_Date__c` | Read/Edit | Read/Edit |
 | `Thank_You_Photo_Rights_Accepted__c` | Read/Edit | Read/Edit |
+| `Thank_You_Photo_Orig_Filename__c` | Read/Edit | Read/Edit |
 
 ---
 
@@ -318,4 +325,6 @@ This codebase uses `with sharing` class declarations only. **Do not add** `WITH 
 | `<property>` in LWC community targetConfig | Deploy error on `lightningCommunity__Page` | Only use `<property>` in `lightning__RecordPage` targetConfig |
 | Source tracking says field "Unchanged" | Field missing from org at runtime | Use Tooling API to confirm; deploy full object folder |
 | `$Lightning.createComponent` LWC not found | Runtime error, component never mounts | Add `<aura:dependency>` for the LWC in `easyAuraApp.app` |
+| `lightning-file-upload` in Lightning Out | File picker opens, filename shows, but **no upload request ever fires** — no error, no console warning, silent no-op (confirmed via network tab: zero XHR/fetch after selection) | Only works in a genuine Lightning runtime (Lightning Experience / `lightning__RecordPage`). In Lightning Out (VF Site) contexts, use a plain `<input type="file">` + `FileReader`/base64 sent to an `@AuraEnabled` Apex method that inserts `ContentVersion` with `FirstPublishLocationId` set to the target record — see `ScholarshipThankYouController.uploadThankYouPhoto` / `scholarshipThankYousLwc.handlePhotoUpload` |
+| `sf data query` / Tooling API "No such column" right after creating a field | Field exists (`FieldDefinition`/`CustomField` confirm it), but standard REST SOQL rejects it | The querying user's session/profile lacks FLS on the brand-new field — not a real "doesn't exist" error. Apex DML/SOQL is unaffected (this codebase doesn't enforce FLS — see SOQL Security Enforcement above), and the portal user works fine once its permission set is deployed. Assign the relevant permission set to whichever admin user you're querying with, or just trust the browser-based (Apex-driven) test instead. |
 

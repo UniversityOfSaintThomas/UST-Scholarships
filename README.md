@@ -26,7 +26,7 @@ A Salesforce DX project managed with [CumulusCI](https://cumulusci.readthedocs.i
 | **Recommender Requests** | Auto-send recommender emails; resend support via `scholarshipRecommenderResendLwc` |
 | **Communication Templates** | Staff manage email templates for each scholarship lifecycle stage via `scholarshipCommunicationTemplatesLwc` |
 | **Eligible Scholarship List** | `scholarshipEligibleListView` dynamically shows applicable scholarships based on application criteria (program, citizenship, degree type) |
-| **Thank-You Letters** | Students write, save drafts, preview, and submit thank-you letters per scholarship; staff view status on the `Scholarship_Applicant__c` record page |
+| **Thank-You Letters** | Students write, save drafts, preview, and submit thank-you letters per scholarship, with optional photo upload (+ persistent "received" confirmation) and a per-scholarship example; staff view status on the `Scholarship_Applicant__c` record page |
 
 ---
 

@@ -6,42 +6,51 @@
 
 ---
 
-## Status Checklist (as of 2026-08-06)
+## Status Checklist (as of 2026-08-10)
+
+> **Demo-ready as of this date** — the portal (student) flow and the photo-upload flow have both been verified end-to-end live in the browser. Expect feedback from tomorrow's stakeholder demo to reshape Phase 4/6 scope and possibly some UX details below.
 
 ### Phase 1 — Data Foundation
 - [x] `Thank_You_Status__c` (Picklist: Not Started/In Progress/Submitted/Complete) on `Scholarship_Applicant__c`
 - [x] `Thank_You_Letter__c` on `Scholarship_Applicant__c` — **upgraded beyond plan**: built as Long Text Area, later converted to **Rich Text Area** so the LWC could use `lightning-input-rich-text`/`lightning-formatted-rich-text`
 - [x] `Thank_You_Submitted_Date__c` (DateTime)
 - [x] `Thank_You_Photo_Rights_Accepted__c` (Checkbox)
+- [x] `Thank_You_Sample_Letter__c` (Rich Text, `Scholarship__c`) — **added beyond plan**: per-scholarship custom "example opening" text, shown in the portal's Example toggle instead of the hardcoded default when populated
+- [x] `Thank_You_Photo_Orig_Filename__c` (Text(200), `Scholarship_Applicant__c`) — **added beyond plan**: stores the original uploaded filename so the portal can show a persistent "we received your photo" confirmation instead of just re-presenting an empty upload control
 - [ ] `Thank_You_Status__c` (DR campaign-level status) on **`Scholarship__c`** — never created; picklist values were never confirmed with the DR team (Open Question #1, still open)
-- [x] `UST_Scholarship_Applicant` permission set — read/edit on all 4 new `Scholarship_Applicant__c` fields, read-only on the `Scholarship__c` support fields
+- [x] `UST_Scholarship_Applicant` permission set — read/edit on all new `Scholarship_Applicant__c` fields (including `Thank_You_Photo_Orig_Filename__c`), read-only on the `Scholarship__c` support fields
 - [x] `UST_Scholarship_Admin` permission set — read/edit on all of the above
 
 ### Phase 2 — Apex Controller
-- [x] `ScholarshipThankYouController.cls` — all 5 planned methods present (`getThankYouItems`, `getThankYouItem`, `saveThankYouDraft`, `submitThankYouLetter`, `getPreviousLetters`)
-- [x] `ScholarshipThankYouController_TEST.cls` — 15 tests, 89% coverage (target was ≥75%)
+- [x] `ScholarshipThankYouController.cls` — 7 `@AuraEnabled` methods: `getThankYouItems`, `getThankYouItem`, `saveThankYouDraft`, `submitThankYouLetter`, `getPreviousLetters`, `uploadThankYouPhoto`, `recordThankYouPhotoFilename`
+- [x] `ScholarshipThankYouController_TEST.cls` — 20 tests, 91% coverage (target was ≥75%)
 - [x] Auth guard (`assertContactOwnership`, admin bypass)
 - [x] Data-completeness check (`hasDataWarning`/`dataWarningMessage` when FA code or donor Account is missing)
 - [x] Status-transition guard (edits blocked once `Complete`)
 - [x] Minimum letter length (100 chars) enforced server-side and client-side — ⚠️ known gap: the server check now measures raw HTML length (rich text), so it's more lenient than the client's stripped-plain-text check; not yet tightened
+- [x] `saveThankYouDraft` now also accepts/persists `photoRightsAccepted` — **bug fix**: previously only `submitThankYouLetter` saved that checkbox, so checking it and clicking "Save Draft" (without submitting) silently lost the answer on reload
 
 ### Phase 3 — LWC (Portal List Mode)
 - [x] `scholarshipThankYousLwc` built out — portal list, status badges, inline editor
 - [x] `<aura:dependency resource="c:scholarshipThankYousLwc"/>` added to `easyAuraApp`
 - [x] `ScholarshipThankYou.page` built
 - [x] Deployed and verified live in the portal as a student user (Thomas Magnum test account)
+- [x] Example text now toggled hidden by default (text-link + chevron icon, not a button), pulls from `Scholarship__c.Thank_You_Sample_Letter__c` with a hardcoded fallback, and shows in every editable status (not just Not Started)
 - [ ] Nav link from `ScholarshipHome.page` to `ScholarshipThankYou.page` (marked optional in the original plan) — not added
 
 ### Phase 4 — LWC (Record Page Mode)
 - [x] Record-page support (`@api recordId`, single-item fetch)
 - [x] `js-meta.xml` targets include `lightning__RecordPage`
+- [x] `handleRecordPhotoUpload` now also persists the filename via `recordThankYouPhotoFilename` so the "photo received" confirmation shows there too (this mode's `lightning-file-upload` isn't affected by the Lightning Out bug below — it just wasn't tracking the filename before)
 - [ ] **Not actually placed on the `Scholarship_Applicant__c` record page** — no FlexiPage in the repo references `scholarshipThankYousLwc`; the component is ready but nobody has dragged it into App Builder yet
-- [ ] Not tested live as a DR/admin user this session (only the portal/student flow was verified in-browser)
+- [ ] Not tested live as a DR/admin user (only the portal/student flow has been verified in-browser)
 
 ### Phase 5 — Photo Upload
-- [x] `lightning-file-upload` added to the letter panel
-- [x] `Thank_You_Photo_Rights_Accepted__c` checkbox wired up
-- [~] File-to-record linking uses the standard `record-id={applicantId}` pattern but was never exercised end-to-end (no actual file was uploaded during testing)
+- [x] **Portal mode fixed**: `lightning-file-upload` silently never fires its upload request when embedded via Lightning Out on this VF Site page — confirmed via network tab (zero XHR/fetch after file selection, no error surfaced to the student). Replaced with a plain `<input type="file">`, `FileReader`/base64, and a new `uploadThankYouPhoto` Apex method that inserts `ContentVersion` with `FirstPublishLocationId` set to the applicant record. Documented in `AGENTS.md` and `docs/ARCHITECTURE.md` as a permanent gotcha.
+- [x] `Thank_You_Photo_Rights_Accepted__c` checkbox wired up, and now persisted on Save Draft (not just Submit) and stays visible after reload whenever a photo is on file, even before the checkbox is answered
+- [x] File-to-record linking verified end-to-end live in the browser (uploaded a real file, confirmed the `ContentVersion`/`ContentDocumentLink` server-side via SOQL)
+- [x] "We received your photo: *filename*" confirmation banner + "Replace Photo" label, persisted across reload via `Thank_You_Photo_Orig_Filename__c`
+- [x] Record-page mode (`lightning-file-upload`, unaffected by the Lightning Out bug) also now records the filename for the same confirmation UI
 
 ### Phase 6 — DR Staff Dashboard (Future / Scope TBD in the original plan)
 - [ ] List view / report of submitted TY letters per scholarship
@@ -58,12 +67,19 @@
 6. Standalone VF page or a tab on an existing page? — **resolved: standalone** `ScholarshipThankYou.page`
 7. Will DR need a native Salesforce review/edit UI? — **still open**, this is Phase 6
 
-### Built beyond the original plan this session
+### Built beyond the original plan (2026-03-26 session)
 - [x] `Thank_You_Letter__c` converted to Rich Text Area (not in original scope — plan called for plain Long Text Area)
 - [x] New `scholarshipThankYouListLwc` — compact nav list with per-scholarship progress bar, deep-linking via `?applicantId=`, and cross-widget same-page navigation with `scholarshipThankYousLwc`
 - [x] Brand-purple styling, active-card outline, and several layout/CSS bug fixes (badge overflow, rich-text toolbar padding/bullet, button-triggers-page-reload bug)
 - [x] Documented a significant Lightning Out component-caching gotcha (in `AGENTS.md` and the shared agent onboarding skill)
 - [x] `AGENTS.md` / `CLAUDE.md` added to the repo (didn't exist before this branch)
+
+### Built beyond the original plan (2026-08-10 session — pre-demo polish)
+- [x] Fixed `lightning-file-upload` silently not working in the Lightning Out portal (see Phase 5) — this was a **functional bug**, not a polish item; photo upload did not work at all for students before this fix
+- [x] `Thank_You_Sample_Letter__c` — per-scholarship custom example text, with fallback to the original hardcoded example
+- [x] Example toggle redesigned: hidden by default, plain text-link styling with a chevron icon (not a button), shown in every status rather than only "Not Started", relabeled "Example opening:" → "Example"
+- [x] "We received your photo" confirmation (survives reload) + fixed the photo-rights checkbox being silently discarded on Save Draft + fixed the checkbox disappearing on reload before it had been answered
+- [x] General visual tightening of the editor panel (removed a stray `<hr>`, reduced padding) per demo-prep feedback
 
 ---
 
@@ -118,11 +134,14 @@ These fields track the per-student, per-scholarship TY state and must be created
 | Field API Name | Type | Values / Notes |
 |---|---|---|
 | `Thank_You_Status__c` | Picklist (restricted) | **Not Started** · **In Progress** · **Submitted** · **Complete** |
-| `Thank_You_Letter__c` | Long Text Area (32,768) | The student's written letter body |
+| `Thank_You_Letter__c` | Rich Text Area (131,072) | The student's written letter body — built as Long Text Area per this plan, later upgraded to Rich Text so the LWC could use `lightning-input-rich-text` |
 | `Thank_You_Submitted_Date__c` | DateTime | Set automatically when student submits |
-| `Thank_You_Photo_Rights_Accepted__c` | Checkbox | Student acceptance of photo usage/quotation rights |
+| `Thank_You_Photo_Rights_Accepted__c` | Checkbox | Student acceptance of photo usage/quotation rights — persisted on both Save Draft and Submit |
+| `Thank_You_Photo_Orig_Filename__c` | Text(200) | **Added beyond original plan.** Original filename of the uploaded photo, set by `uploadThankYouPhoto`/`recordThankYouPhotoFilename`. Drives the "we received your photo" confirmation UI so the answer to "did my upload work" survives a reload. |
 
-> **Photo upload:** Student photos will be stored as Salesforce Files (ContentDocument/ContentVersion linked to the Scholarship_Applicant__c record) rather than a custom field. The LWC will use the standard `lightning-file-upload` component.
+Also added to `Scholarship__c` (not in the original plan): `Thank_You_Sample_Letter__c` (Rich Text) — a per-scholarship custom "example opening" shown in the portal instead of the hardcoded default text when populated.
+
+> **Photo upload — implementation differs from the original plan.** Student photos are stored as Salesforce Files (ContentDocument/ContentVersion linked to the Scholarship_Applicant__c record via `FirstPublishLocationId`), as planned. However, the standard `lightning-file-upload` component **does not work in the portal** (Lightning Out on a Visualforce Site page) — it silently never fires its upload request. The portal editor instead reads the file client-side (`FileReader`) and POSTs it as base64 to a custom `uploadThankYouPhoto` Apex method. `lightning-file-upload` is still used, and works fine, in record-page mode (native Lightning Experience). See the Known Gotchas entry in `docs/ARCHITECTURE.md` and `AGENTS.md`.
 
 ### 3.2 New Apex Class
 
@@ -190,17 +209,31 @@ public static List<ThankYouItem> getThankYouItems(String contactId)
 @AuraEnabled
 public static ThankYouItem getThankYouItem(String applicantId)
 
-// Saves a draft (status → In Progress if Not Started)
+// Saves a draft (status → In Progress if Not Started). photoRightsAccepted is
+// nullable — pass the current checkbox state so it isn't lost if the student
+// hasn't clicked Submit yet.
 @AuraEnabled
-public static void saveThankYouDraft(String applicantId, String letterText)
+public static ThankYouItem saveThankYouDraft(String applicantId, String letterText, Boolean photoRightsAccepted)
 
 // Submits the final letter (status → Submitted, sets submitted date)
 @AuraEnabled
-public static void submitThankYouLetter(String applicantId, String letterText, Boolean photoRightsAccepted)
+public static ThankYouItem submitThankYouLetter(String applicantId, String letterText, Boolean photoRightsAccepted)
 
 // Copies text from another of the student's submitted/complete TY letters
 @AuraEnabled(cacheable=true)
 public static List<PreviousLetterOption> getPreviousLetters(String contactId, String excludeApplicantId)
+
+// Portal-mode photo upload (base64) — required because lightning-file-upload
+// does not work in Lightning Out. Inserts ContentVersion + updates the
+// original-filename field in one call.
+@AuraEnabled
+public static void uploadThankYouPhoto(String applicantId, String fileName, String base64Data)
+
+// Record-page mode only: lightning-file-upload already inserted the file (that
+// component works fine there); this just persists the filename for the
+// "photo received" confirmation.
+@AuraEnabled
+public static void recordThankYouPhotoFilename(String applicantId, String fileName)
 ```
 
 ### Inner / Wrapper Class: `ThankYouItem`
@@ -215,7 +248,9 @@ public class ThankYouItem {
     @AuraEnabled public String thankYouRequired;         // Yes / Optional
     @AuraEnabled public String thankYouStatus;           // Not Started … Complete
     @AuraEnabled public String thankYouLetter;
+    @AuraEnabled public String sampleLetter;         // Scholarship__c.Thank_You_Sample_Letter__c, falls back client-side
     @AuraEnabled public Boolean photoRightsAccepted;
+    @AuraEnabled public String photoFileName;         // drives the "photo received" confirmation
     @AuraEnabled public Datetime submittedDate;
     @AuraEnabled public Boolean hasDataWarning;          // true if FA code / scholarship name is missing
     @AuraEnabled public String dataWarningMessage;
@@ -265,10 +300,10 @@ Clicking **Start / Continue / View** expands an inline panel (or opens a modal) 
 3. **"Use a previous letter"** dropdown (if student has prior submissions — `getPreviousLetters`)
 4. **Letter textarea** with:
    - Character/sentence count hint (min 3–5 sentences)
-   - Inline example text shown on first open
+   - Example text — text-link toggle (chevron icon, hidden by default), pulls from `Thank_You_Sample_Letter__c` with a hardcoded fallback, available regardless of status
 5. **Preview panel** (toggled by "Preview" button — shows formatted letter before submit)
-6. **Photo upload** (`lightning-file-upload` — optional, only shown if scholarship supports it)
-7. **Photo rights checkbox** (shown when photo is uploaded)
+6. **Photo upload** — plain `<input type="file">` + base64 upload to Apex (`lightning-file-upload` does not work here — see §3.1 note); shows a persistent "we received your photo: *filename*" confirmation and relabels to "Replace Photo" once one is on file
+7. **Photo rights checkbox** (shown whenever a photo is on file, answer persisted on both Save Draft and Submit)
 8. **Save Draft** / **Submit** buttons
 9. Status badge updates immediately after submission (no page reload)
 
@@ -427,12 +462,16 @@ When the LWC is used **on a record page** (Lightning context, not VF), `ShowToas
 ```
 force-app/main/default/
 ├── objects/
+│   ├── Scholarship__c/
+│   │   └── fields/
+│   │       └── Thank_You_Sample_Letter__c.field-meta.xml    [NEW — beyond original plan]
 │   └── Scholarship_Applicant__c/
 │       └── fields/
 │           ├── Thank_You_Status__c.field-meta.xml          [NEW]
 │           ├── Thank_You_Letter__c.field-meta.xml           [NEW]
 │           ├── Thank_You_Submitted_Date__c.field-meta.xml   [NEW]
-│           └── Thank_You_Photo_Rights_Accepted__c.field-meta.xml  [NEW]
+│           ├── Thank_You_Photo_Rights_Accepted__c.field-meta.xml  [NEW]
+│           └── Thank_You_Photo_Orig_Filename__c.field-meta.xml    [NEW — beyond original plan]
 ├── classes/
 │   ├── ScholarshipThankYouController.cls                    [NEW]
 │   ├── ScholarshipThankYouController.cls-meta.xml           [NEW]

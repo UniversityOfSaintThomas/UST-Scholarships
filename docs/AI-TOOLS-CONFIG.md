@@ -35,12 +35,14 @@ This file provides project-specific context for AI assistants working in this re
 ### `Scholarship__c`
 - `Thank_You_Required__c` — Picklist: `Yes`, `Optional`, *(blank)* — determines which applicants enter the TY workflow
 - `Scholarship_ID__c` — External URL identifier, used as cookie/param for VF page navigation
+- `Thank_You_Sample_Letter__c` — Rich Text (32,768); optional per-scholarship custom "example opening" shown in the portal's Example toggle. LWC falls back to a hardcoded default when blank.
 
 ### `Scholarship_Applicant__c`
 - `Scholarship_Status__c` — Application lifecycle picklist; `Accepted` and `Awarded` are the "awarded" statuses that gate TY eligibility
 - `Thank_You_Status__c` — Picklist: `Not Started`, `In Progress`, `Submitted`, `Complete`
 - `Thank_You_Letter__c` — Rich Text Area (131,072), stores HTML. **Cannot be used in SOQL WHERE clauses.** Filter in Apex instead. The 100-character minimum enforced in `ScholarshipThankYouController` and `scholarshipThankYousLwc` is measured on plain text stripped of HTML tags client-side — the Apex check still measures raw HTML length, so it's more lenient.
-- `Thank_You_Photo_Rights_Accepted__c` — Checkbox for photo/quote usage consent
+- `Thank_You_Photo_Rights_Accepted__c` — Checkbox for photo/quote usage consent; persisted on both `saveThankYouDraft` and `submitThankYouLetter` so it isn't lost before the student clicks Submit
+- `Thank_You_Photo_Orig_Filename__c` — Text(200); original filename of the uploaded TY photo, set by `uploadThankYouPhoto`/`recordThankYouPhotoFilename`. Drives the "we received your photo" confirmation in the portal.
 - `Thank_You_Submitted_Date__c` — DateTime, set on submit
 
 ---
@@ -86,6 +88,8 @@ This file provides project-specific context for AI assistants working in this re
 
 This codebase uses `with sharing` on class declarations only. **Do not add** `WITH USER_MODE` or `WITH SECURITY_ENFORCED` to SOQL queries — scratch org profiles without explicit FLS grants will fail at runtime. This is consistent across the entire codebase.
 
+Corollary for ad-hoc verification: plain `sf data query`/Tooling API queries you run yourself as the scratch org admin **do** enforce FLS (unlike Apex SOQL, which runs in system mode here). Right after deploying a brand-new field, `sf data query` can fail with "No such column" even though `FieldDefinition`/`CustomField` confirm the field exists — that's a missing-FLS-on-your-query-user issue, not a real deploy failure. Don't chase it; either assign the field's permission set to that user or just verify via the browser (which uses the portal user's own permission set through Apex).
+
 ---
 
 ## Common Deploy Targets
@@ -114,7 +118,7 @@ cci task run deploy --path force-app/main/default/permissionsets --org dev
 
 | Test Class | Covers |
 |---|---|
-| `ScholarshipThankYouController_TEST` | `ScholarshipThankYouController` — 15 tests, ~89% coverage |
+| `ScholarshipThankYouController_TEST` | `ScholarshipThankYouController` — 20 tests, ~91% coverage |
 
 > More test classes should be added as new controllers are built. Run with `--wait 20` to avoid "test already enqueued" errors.
 
