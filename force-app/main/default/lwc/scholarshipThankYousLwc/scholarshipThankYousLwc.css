@@ -79,13 +79,35 @@
 
 /* ── Editor Panel ────────────────────────────────────────── */
 .ty-editor {
-    padding-top: 0.5rem;
+    padding-top: 0.25rem;
+}
+
+.ty-example-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: var(--ty-brand-color);
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+.ty-example-toggle:hover,
+.ty-example-toggle:focus {
+    text-decoration: underline;
+}
+
+.ty-example-toggle-icon {
+    --sds-c-icon-color-foreground-default: var(--ty-brand-color);
 }
 
 .ty-example-box {
     background: #f3f3f3;
     border-left: 3px solid #0070d2;
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.6rem;
     font-size: 0.875rem;
     border-radius: 0 4px 4px 0;
 }

@@ -74,8 +74,6 @@
                             <!-- Inline Editor Panel -->
                             <template lwc:if={item.editorOpen}>
                                 <div class="ty-editor slds-m-top_small">
-                                    <hr class="slds-m-vertical_x-small"/>
-
                                     <!-- Previous letter re-use dropdown -->
                                     <template lwc:if={item.hasPreviousLetters}>
                                         <div class="slds-m-bottom_small">
@@ -100,13 +98,25 @@
                                         </div>
                                     </template>
 
-                                    <!-- Example text hint (only for Not Started) -->
-                                    <template lwc:if={item.showExample}>
-                                        <div class="ty-example-box slds-m-bottom_small">
-                                            <strong>Example opening:</strong>
-                                            <em> "Dear [Donor Name], I am writing to express my sincere gratitude for your generous scholarship support. Your gift has made it possible for me to pursue my education at the University of St. Thomas..."</em>
-                                        </div>
-                                    </template>
+                                    <!-- Example text hint (toggled, hidden by default) -->
+                                    <div class="slds-m-bottom_x-small">
+                                        <button
+                                            type="button"
+                                            class="ty-example-toggle"
+                                            data-id={item.applicantId}
+                                            onclick={handleToggleExample}
+                                            aria-expanded={item.showExample}
+                                        >
+                                            <span>{item.exampleToggleLabel}</span>
+                                            <lightning-icon icon-name={item.exampleToggleIcon} size="xx-small" class="ty-example-toggle-icon"></lightning-icon>
+                                        </button>
+                                        <template lwc:if={item.showExample}>
+                                            <div class="ty-example-box slds-m-top_x-small">
+                                                <strong>Example</strong>
+                                                <lightning-formatted-rich-text value={item.exampleText}></lightning-formatted-rich-text>
+                                            </div>
+                                        </template>
+                                    </div>
 
                                     <!-- Letter Rich Text Input -->
                                     <div class="slds-form-element slds-m-bottom_small">
@@ -273,8 +283,6 @@
                     <!-- Editor / Viewer Panel -->
                     <template lwc:if={singleItem.editorOpen}>
                         <div class="ty-editor slds-m-top_small">
-                            <hr class="slds-m-vertical_x-small"/>
-
                             <!-- Previous letter re-use dropdown -->
                             <template lwc:if={singleItem.hasPreviousLetters}>
                                 <div class="slds-m-bottom_small">
@@ -294,13 +302,24 @@
                                 </div>
                             </template>
 
-                            <!-- Example text hint (only for Not Started) -->
-                            <template lwc:if={singleItem.showExample}>
-                                <div class="ty-example-box slds-m-bottom_small">
-                                    <strong>Example opening:</strong>
-                                    <em> "Dear [Donor Name], I am writing to express my sincere gratitude for your generous scholarship support. Your gift has made it possible for me to pursue my education at the University of St. Thomas..."</em>
-                                </div>
-                            </template>
+                            <!-- Example text hint (toggled, hidden by default) -->
+                            <div class="slds-m-bottom_x-small">
+                                <button
+                                    type="button"
+                                    class="ty-example-toggle"
+                                    onclick={handleRecordToggleExample}
+                                    aria-expanded={singleItem.showExample}
+                                >
+                                    <span>{singleItem.exampleToggleLabel}</span>
+                                    <lightning-icon icon-name={singleItem.exampleToggleIcon} size="xx-small" class="ty-example-toggle-icon"></lightning-icon>
+                                </button>
+                                <template lwc:if={singleItem.showExample}>
+                                    <div class="ty-example-box slds-m-top_x-small">
+                                        <strong>Example</strong>
+                                        <lightning-formatted-rich-text value={singleItem.exampleText}></lightning-formatted-rich-text>
+                                    </div>
+                                </template>
+                            </div>
 
                             <!-- Letter Rich Text Input -->
                             <div class="slds-form-element slds-m-bottom_small">

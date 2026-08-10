@@ -49,6 +49,7 @@ public with sharing class ScholarshipThankYouController {
                    Scholarship__r.Thank_You_Required__c,
                    Scholarship__r.Designation_Code__c,
                    Scholarship__r.Financial_Aid_Code__c,
+                   Scholarship__r.Thank_You_Sample_Letter__c,
                    Scholarship__r.Scholarship_Account__r.Name
             FROM Scholarship_Applicant__c
             WHERE Contact__c = :resolvedContactId
@@ -92,6 +93,7 @@ public with sharing class ScholarshipThankYouController {
                    Scholarship__r.Thank_You_Required__c,
                    Scholarship__r.Designation_Code__c,
                    Scholarship__r.Financial_Aid_Code__c,
+                   Scholarship__r.Thank_You_Sample_Letter__c,
                    Scholarship__r.Scholarship_Account__r.Name
             FROM Scholarship_Applicant__c
             WHERE Id = :applicantId
@@ -294,6 +296,7 @@ public with sharing class ScholarshipThankYouController {
                                         ? 'Not Started'
                                         : app.Thank_You_Status__c;
         item.thankYouLetter         = app.Thank_You_Letter__c;
+        item.sampleLetter           = app.Scholarship__r.Thank_You_Sample_Letter__c;
         item.photoRightsAccepted    = app.Thank_You_Photo_Rights_Accepted__c == true;
         item.submittedDate          = app.Thank_You_Submitted_Date__c;
 
@@ -376,6 +379,7 @@ public with sharing class ScholarshipThankYouController {
         @AuraEnabled public String   thankYouRequired;
         @AuraEnabled public String   thankYouStatus;
         @AuraEnabled public String   thankYouLetter;
+        @AuraEnabled public String   sampleLetter;
         @AuraEnabled public Boolean  photoRightsAccepted;
         @AuraEnabled public Datetime submittedDate;
         @AuraEnabled public Boolean  hasDataWarning;

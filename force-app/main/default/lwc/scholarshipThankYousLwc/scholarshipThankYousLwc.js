@@ -41,6 +41,8 @@ const STATUS_CLASS_MAP  = {
 };
 const EDITABLE_STATUSES = new Set(['Not Started', 'In Progress']);
 const ACCEPTED_FORMATS  = ['.jpg', '.jpeg', '.png', '.gif', '.pdf'];
+const DEFAULT_EXAMPLE_HTML = '<em>"Dear [Donor Name], I am writing to express my sincere gratitude for your generous scholarship support. '
+    + 'Your gift has made it possible for me to pursue my education at the University of St. Thomas..."</em>';
 
 export default class ScholarshipThankYousLwc extends LightningElement {
 
@@ -217,7 +219,10 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             hasPreviousLetters: false,
             actionLabel:       this._actionLabel(status),
             previewLabel:      'Preview',
-            showExample:       status === 'Not Started',
+            showExample:       false,
+            exampleToggleLabel: 'Show Example',
+            exampleToggleIcon: 'utility:chevronright',
+            exampleText:       raw.sampleLetter || DEFAULT_EXAMPLE_HTML,
             charCountLabel:    this._charCountLabel(raw.thankYouLetter),
             previousSelectId:  `prev-${raw.applicantId}`,
             photoCheckboxId:   `photo-${raw.applicantId}`,
@@ -359,6 +364,9 @@ export default class ScholarshipThankYousLwc extends LightningElement {
                     editorOpen:  true,
                     cardClass:   this._cardClass(true),
                     showPreview: item.showPreview,
+                    showExample: item.showExample,
+                    exampleToggleLabel: item.exampleToggleLabel,
+                    exampleToggleIcon: item.exampleToggleIcon,
                     previousLetters: item.previousLetters,
                     hasPreviousLetters: item.hasPreviousLetters
                 });
@@ -452,6 +460,18 @@ export default class ScholarshipThankYousLwc extends LightningElement {
         this._updateItem(id, { photoRightsAccepted: checked });
     }
 
+    handleToggleExample(event) {
+        const id   = event.currentTarget.dataset.id;
+        const item = this._findItem(id);
+        if (!item) return;
+        const nowShowing = !item.showExample;
+        this._updateItem(id, {
+            showExample: nowShowing,
+            exampleToggleLabel: nowShowing ? 'Hide Example' : 'Show Example',
+            exampleToggleIcon: nowShowing ? 'utility:chevrondown' : 'utility:chevronright'
+        });
+    }
+
     // ─── Record Page Mode Handlers ───────────────────────────────────────────
 
     handleRecordToggleEditor() {
@@ -526,6 +546,9 @@ export default class ScholarshipThankYousLwc extends LightningElement {
                     ...this._enrichSingleItem(updated),
                     editorOpen:        true,
                     showPreview:       this.singleItem.showPreview,
+                    showExample:       this.singleItem.showExample,
+                    exampleToggleLabel: this.singleItem.exampleToggleLabel,
+                    exampleToggleIcon: this.singleItem.exampleToggleIcon,
                     previousLetters:   this.singleItem.previousLetters,
                     hasPreviousLetters: this.singleItem.hasPreviousLetters
                 });
@@ -582,5 +605,14 @@ export default class ScholarshipThankYousLwc extends LightningElement {
 
     handleRecordPhotoRightsChange(event) {
         this._updateSingleItem({ photoRightsAccepted: event.target.checked });
+    }
+
+    handleRecordToggleExample() {
+        const nowShowing = !this.singleItem.showExample;
+        this._updateSingleItem({
+            showExample: nowShowing,
+            exampleToggleLabel: nowShowing ? 'Hide Example' : 'Show Example',
+            exampleToggleIcon: nowShowing ? 'utility:chevrondown' : 'utility:chevronright'
+        });
     }
 }
