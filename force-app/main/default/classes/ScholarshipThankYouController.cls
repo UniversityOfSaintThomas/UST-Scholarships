@@ -45,6 +45,7 @@ public with sharing class ScholarshipThankYouController {
                    Thank_You_Letter__c,
                    Thank_You_Submitted_Date__c,
                    Thank_You_Photo_Rights_Accepted__c,
+                   Thank_You_Photo_Orig_Filename__c,
                    Scholarship__r.Name,
                    Scholarship__r.Thank_You_Required__c,
                    Scholarship__r.Designation_Code__c,
@@ -89,6 +90,7 @@ public with sharing class ScholarshipThankYouController {
                    Thank_You_Letter__c,
                    Thank_You_Submitted_Date__c,
                    Thank_You_Photo_Rights_Accepted__c,
+                   Thank_You_Photo_Orig_Filename__c,
                    Scholarship__r.Name,
                    Scholarship__r.Thank_You_Required__c,
                    Scholarship__r.Designation_Code__c,
@@ -117,12 +119,19 @@ public with sharing class ScholarshipThankYouController {
      * Does NOT advance if already Submitted or Complete.
      */
     @AuraEnabled
-    public static ThankYouItem saveThankYouDraft(String applicantId, String letterText) {
+    public static ThankYouItem saveThankYouDraft(
+        String applicantId,
+        String letterText,
+        Boolean photoRightsAccepted
+    ) {
         Scholarship_Applicant__c app = getWritableApplicant(applicantId);
 
         app.Thank_You_Letter__c = letterText;
         if (app.Thank_You_Status__c == null || app.Thank_You_Status__c == 'Not Started') {
             app.Thank_You_Status__c = 'In Progress';
+        }
+        if (photoRightsAccepted != null) {
+            app.Thank_You_Photo_Rights_Accepted__c = photoRightsAccepted;
         }
 
         update app; // USER_MODE enforced via with sharing class
@@ -188,6 +197,25 @@ public with sharing class ScholarshipThankYouController {
         version.VersionData = EncodingUtil.base64Decode(base64Data);
         version.FirstPublishLocationId = app.Id;
         insert version;
+
+        app.Thank_You_Photo_Orig_Filename__c = fileName;
+        update app;
+    }
+
+    /**
+     * Records the filename of a photo already uploaded via lightning-file-upload's
+     * own upload mechanism (record-page mode only — that component works fine
+     * there; it's only broken in the Lightning Out portal). Purely so the "photo
+     * received" confirmation survives a reload without a second file input.
+     */
+    @AuraEnabled
+    public static void recordThankYouPhotoFilename(String applicantId, String fileName) {
+        if (String.isBlank(fileName)) {
+            return;
+        }
+        Scholarship_Applicant__c app = getWritableApplicant(applicantId);
+        app.Thank_You_Photo_Orig_Filename__c = fileName;
+        update app;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -298,6 +326,7 @@ public with sharing class ScholarshipThankYouController {
         item.thankYouLetter         = app.Thank_You_Letter__c;
         item.sampleLetter           = app.Scholarship__r.Thank_You_Sample_Letter__c;
         item.photoRightsAccepted    = app.Thank_You_Photo_Rights_Accepted__c == true;
+        item.photoFileName          = app.Thank_You_Photo_Orig_Filename__c;
         item.submittedDate          = app.Thank_You_Submitted_Date__c;
 
         // Donor name from Scholarship Account lookup
@@ -381,6 +410,7 @@ public with sharing class ScholarshipThankYouController {
         @AuraEnabled public String   thankYouLetter;
         @AuraEnabled public String   sampleLetter;
         @AuraEnabled public Boolean  photoRightsAccepted;
+        @AuraEnabled public String   photoFileName;
         @AuraEnabled public Datetime submittedDate;
         @AuraEnabled public Boolean  hasDataWarning;
         @AuraEnabled public String   dataWarningMessage;

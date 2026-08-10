@@ -112,7 +112,6 @@
                                         </button>
                                         <template lwc:if={item.showExample}>
                                             <div class="ty-example-box slds-m-top_x-small">
-                                                <strong>Example</strong>
                                                 <lightning-formatted-rich-text value={item.exampleText}></lightning-formatted-rich-text>
                                             </div>
                                         </template>
@@ -150,8 +149,14 @@
 
                                     <!-- Photo Upload -->
                                     <template lwc:if={item.isEditable}>
+                                        <template lwc:if={item.photoFileName}>
+                                            <div class="ty-photo-received slds-m-bottom_x-small">
+                                                <lightning-icon icon-name="utility:success" size="x-small" class="slds-m-right_xx-small"></lightning-icon>
+                                                <span>We received your photo: <strong>{item.photoFileName}</strong></span>
+                                            </div>
+                                        </template>
                                         <div class="slds-form-element slds-m-bottom_small">
-                                            <label class="slds-form-element__label" for={item.photoInputId}>Upload a Photo (optional)</label>
+                                            <label class="slds-form-element__label" for={item.photoInputId}>{item.photoUploadLabel}</label>
                                             <div class="slds-form-element__control">
                                                 <input
                                                     type="file"
@@ -164,9 +169,6 @@
                                             </div>
                                             <template lwc:if={item.photoUploading}>
                                                 <p class="slds-form-element__help">Uploading…</p>
-                                            </template>
-                                            <template lwc:if={item.photoFileName}>
-                                                <p class="slds-form-element__help">Uploaded: {item.photoFileName}</p>
                                             </template>
                                         </div>
 
@@ -355,9 +357,15 @@
 
                             <!-- Photo Upload + Rights (editable only) -->
                             <template lwc:if={singleItem.isEditable}>
+                                <template lwc:if={singleItem.photoFileName}>
+                                    <div class="ty-photo-received slds-m-bottom_x-small">
+                                        <lightning-icon icon-name="utility:success" size="x-small" class="slds-m-right_xx-small"></lightning-icon>
+                                        <span>We received your photo: <strong>{singleItem.photoFileName}</strong></span>
+                                    </div>
+                                </template>
                                 <div class="slds-m-bottom_small">
                                     <lightning-file-upload
-                                        label="Upload a Photo (optional)"
+                                        label={singleItem.photoUploadLabel}
                                         name="thankYouPhoto"
                                         accept={acceptedFormats}
                                         record-id={recordId}

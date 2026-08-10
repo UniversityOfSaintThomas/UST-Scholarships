@@ -20,17 +20,13 @@
 }
 
 .ty-nav-row-wrap {
-    border-radius: 4px;
-    border-left: 3px solid transparent;
-    /* Clips the badge/pill if a page-level reset (e.g. the portal template's
-       external stylesheet) strips box-sizing: border-box off our button and
-       makes its padded width overflow this row. */
+    border-radius: 0;
     overflow: hidden;
 }
 
 .ty-nav-row_active {
     background: color-mix(in srgb, var(--ty-brand-color) 8%, white);
-    border-left-color: var(--ty-brand-color);
+    border-bottom-color: var(--ty-brand-color);
 }
 
 .ty-nav-row {
@@ -39,7 +35,7 @@
     text-align: left;
     background: transparent;
     border: none;
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0;
     cursor: pointer;
     border-radius: 4px;
 }
@@ -80,4 +76,8 @@
 .ty-badge-complete {
     background-color: #2e844a;
     color: #fff;
+}
+
+.slds-scope .ty-nav-progress .slds-progress-bar__value {
+    color: #a901d3!important;
 }

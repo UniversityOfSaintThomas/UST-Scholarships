@@ -30,6 +30,7 @@ import saveThankYouDraft    from '@salesforce/apex/ScholarshipThankYouController
 import submitThankYouLetter from '@salesforce/apex/ScholarshipThankYouController.submitThankYouLetter';
 import getPreviousLetters   from '@salesforce/apex/ScholarshipThankYouController.getPreviousLetters';
 import uploadThankYouPhoto  from '@salesforce/apex/ScholarshipThankYouController.uploadThankYouPhoto';
+import recordThankYouPhotoFilename from '@salesforce/apex/ScholarshipThankYouController.recordThankYouPhotoFilename';
 
 const MIN_LENGTH        = 100;
 const THANK_YOU_SELECT_EVENT = 'ustty_selectapplicant';
@@ -213,7 +214,10 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             editorOpen:        false,
             cardClass:         this._cardClass(false),
             showPreview:       false,
-            showPhotoRights:   raw.photoRightsAccepted === true,
+            // Shown whenever a photo is on file, not just once rights are accepted —
+            // otherwise the checkbox (and the student's chance to answer it) vanishes
+            // on reload if they uploaded a photo but hadn't checked it yet.
+            showPhotoRights:   raw.photoRightsAccepted === true || !!raw.photoFileName,
             draftText:         raw.thankYouLetter || '',
             previousLetters:   [],
             hasPreviousLetters: false,
@@ -227,7 +231,8 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             previousSelectId:  `prev-${raw.applicantId}`,
             photoCheckboxId:   `photo-${raw.applicantId}`,
             photoInputId:      `photo-input-${raw.applicantId}`,
-            photoFileName:     '',
+            photoFileName:     raw.photoFileName || '',
+            photoUploadLabel:  raw.photoFileName ? 'Replace Photo (optional)' : 'Upload a Photo (optional)',
             photoUploading:    false,
             formattedSubmittedDate: this._formatDate(raw.submittedDate),
             photoRightsLabel:  raw.photoRightsAccepted ? 'Accepted' : 'Not accepted'
@@ -357,7 +362,11 @@ export default class ScholarshipThankYousLwc extends LightningElement {
         const text   = editor ? editor.value : item.draftText;
 
         this.isLoading = true;
-        saveThankYouDraft({ applicantId: id, letterText: text })
+        saveThankYouDraft({
+            applicantId: id,
+            letterText: text,
+            photoRightsAccepted: item.photoRightsAccepted || false
+        })
             .then(updated => {
                 this._updateItem(id, {
                     ...this._enrichItem(updated),
@@ -433,9 +442,10 @@ export default class ScholarshipThankYousLwc extends LightningElement {
             .then(base64Data => uploadThankYouPhoto({ applicantId: id, fileName: file.name, base64Data }))
             .then(() => {
                 this._updateItem(id, {
-                    showPhotoRights: true,
-                    photoFileName:   file.name,
-                    photoUploading:  false
+                    showPhotoRights:  true,
+                    photoFileName:    file.name,
+                    photoUploadLabel: 'Replace Photo (optional)',
+                    photoUploading:   false
                 });
                 this._showFeedback('success', 'Photo uploaded successfully.');
             })
@@ -540,7 +550,11 @@ export default class ScholarshipThankYousLwc extends LightningElement {
         const text   = editor ? editor.value : this.singleItem.draftText;
 
         this.isLoading = true;
-        saveThankYouDraft({ applicantId: this.recordId, letterText: text })
+        saveThankYouDraft({
+            applicantId: this.recordId,
+            letterText: text,
+            photoRightsAccepted: this.singleItem.photoRightsAccepted || false
+        })
             .then(updated => {
                 this._updateSingleItem({
                     ...this._enrichSingleItem(updated),
@@ -598,8 +612,17 @@ export default class ScholarshipThankYousLwc extends LightningElement {
 
     handleRecordPhotoUpload(event) {
         if (event.detail.files && event.detail.files.length > 0) {
-            this._updateSingleItem({ showPhotoRights: true });
+            const fileName = event.detail.files[0].name;
+            this._updateSingleItem({
+                showPhotoRights:  true,
+                photoFileName:    fileName,
+                photoUploadLabel: 'Replace Photo (optional)'
+            });
             this._showFeedback('success', 'Photo uploaded successfully.');
+            // lightning-file-upload already inserted the file — this just persists
+            // the filename so the "photo received" confirmation survives a reload.
+            recordThankYouPhotoFilename({ applicantId: this.recordId, fileName })
+                .catch(() => { /* non-fatal — filename confirmation is a convenience */ });
         }
     }
 

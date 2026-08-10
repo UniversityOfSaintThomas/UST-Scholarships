@@ -243,11 +243,13 @@ private class ScholarshipThankYouController_TEST {
 
         Test.startTest();
         ScholarshipThankYouController.ThankYouItem result =
-            ScholarshipThankYouController.saveThankYouDraft(app.Id, 'This is my draft letter text for testing purposes.');
+            ScholarshipThankYouController.saveThankYouDraft(app.Id, 'This is my draft letter text for testing purposes.', true);
         Test.stopTest();
 
         System.assertEquals('In Progress', result.thankYouStatus);
         System.assertEquals('This is my draft letter text for testing purposes.', result.thankYouLetter);
+        System.assertEquals(true, result.photoRightsAccepted,
+            'Photo permission answer should be saved along with the draft');
     }
 
     @isTest
@@ -259,7 +261,7 @@ private class ScholarshipThankYouController_TEST {
 
         Test.startTest();
         ScholarshipThankYouController.ThankYouItem result =
-            ScholarshipThankYouController.saveThankYouDraft(app.Id, 'Edited draft text for submitted record test.');
+            ScholarshipThankYouController.saveThankYouDraft(app.Id, 'Edited draft text for submitted record test.', null);
         Test.stopTest();
 
         // Status should remain Submitted, not regress
@@ -414,6 +416,14 @@ private class ScholarshipThankYouController_TEST {
         ];
         System.assertEquals(1, links.size(), 'Photo should be linked to the applicant record');
         System.assertEquals('photo', links[0].ContentDocument.Title);
+
+        Scholarship_Applicant__c updated = [
+            SELECT Thank_You_Photo_Orig_Filename__c
+            FROM Scholarship_Applicant__c
+            WHERE Id = :app.Id
+        ];
+        System.assertEquals('photo.png', updated.Thank_You_Photo_Orig_Filename__c,
+            'Original filename should be saved for the "photo received" confirmation');
     }
 
     @isTest
@@ -449,5 +459,41 @@ private class ScholarshipThankYouController_TEST {
         Test.stopTest();
 
         System.assert(threw, 'Should throw when status is Complete (DR lock)');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // recordThankYouPhotoFilename
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void testRecordThankYouPhotoFilename_savesFilename() {
+        Scholarship_Applicant__c app = getAcceptedApp();
+
+        Test.startTest();
+        ScholarshipThankYouController.recordThankYouPhotoFilename(app.Id, 'staff-upload.jpg');
+        Test.stopTest();
+
+        Scholarship_Applicant__c updated = [
+            SELECT Thank_You_Photo_Orig_Filename__c
+            FROM Scholarship_Applicant__c
+            WHERE Id = :app.Id
+        ];
+        System.assertEquals('staff-upload.jpg', updated.Thank_You_Photo_Orig_Filename__c);
+    }
+
+    @isTest
+    static void testRecordThankYouPhotoFilename_blankFileNameIsNoOp() {
+        Scholarship_Applicant__c app = getAcceptedApp();
+
+        Test.startTest();
+        ScholarshipThankYouController.recordThankYouPhotoFilename(app.Id, '');
+        Test.stopTest();
+
+        Scholarship_Applicant__c updated = [
+            SELECT Thank_You_Photo_Orig_Filename__c
+            FROM Scholarship_Applicant__c
+            WHERE Id = :app.Id
+        ];
+        System.assertEquals(null, updated.Thank_You_Photo_Orig_Filename__c);
     }
 }

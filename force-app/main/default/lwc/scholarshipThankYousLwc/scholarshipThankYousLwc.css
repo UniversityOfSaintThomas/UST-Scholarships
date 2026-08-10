@@ -104,6 +104,13 @@
     --sds-c-icon-color-foreground-default: var(--ty-brand-color);
 }
 
+.ty-photo-received {
+    display: flex;
+    align-items: center;
+    color: #2e844a;
+    font-size: 0.8125rem;
+}
+
 .ty-example-box {
     background: #f3f3f3;
     border-left: 3px solid #0070d2;
@@ -150,4 +157,8 @@
     padding: 0.5rem 1rem;
     display: flex;
     align-items: center;
+}
+
+.slds-scope .ty-nav-progress .slds-progress-bar__value {
+    color: #a901d3!important;
 }
