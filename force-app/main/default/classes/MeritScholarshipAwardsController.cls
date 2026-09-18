@@ -3,6 +3,64 @@
  */
 
 public without sharing class MeritScholarshipAwardsController {
+    private static final Map<String, String> STATE_NAMES_BY_ABBREVIATION = new Map<String, String>{
+            'AL' => 'Alabama',
+            'AK' => 'Alaska',
+            'AZ' => 'Arizona',
+            'AR' => 'Arkansas',
+            'CA' => 'California',
+            'CO' => 'Colorado',
+            'CT' => 'Connecticut',
+            'DE' => 'Delaware',
+            'DC' => 'District of Columbia',
+            'FL' => 'Florida',
+            'GA' => 'Georgia',
+            'HI' => 'Hawaii',
+            'ID' => 'Idaho',
+            'IL' => 'Illinois',
+            'IN' => 'Indiana',
+            'IA' => 'Iowa',
+            'KS' => 'Kansas',
+            'KY' => 'Kentucky',
+            'LA' => 'Louisiana',
+            'ME' => 'Maine',
+            'MD' => 'Maryland',
+            'MA' => 'Massachusetts',
+            'MI' => 'Michigan',
+            'MN' => 'Minnesota',
+            'MS' => 'Mississippi',
+            'MO' => 'Missouri',
+            'MT' => 'Montana',
+            'NE' => 'Nebraska',
+            'NV' => 'Nevada',
+            'NH' => 'New Hampshire',
+            'NJ' => 'New Jersey',
+            'NM' => 'New Mexico',
+            'NY' => 'New York',
+            'NC' => 'North Carolina',
+            'ND' => 'North Dakota',
+            'OH' => 'Ohio',
+            'OK' => 'Oklahoma',
+            'OR' => 'Oregon',
+            'PA' => 'Pennsylvania',
+            'RI' => 'Rhode Island',
+            'SC' => 'South Carolina',
+            'SD' => 'South Dakota',
+            'TN' => 'Tennessee',
+            'TX' => 'Texas',
+            'UT' => 'Utah',
+            'VT' => 'Vermont',
+            'VA' => 'Virginia',
+            'WA' => 'Washington',
+            'WV' => 'West Virginia',
+            'WI' => 'Wisconsin',
+            'WY' => 'Wyoming',
+            'AS' => 'American Samoa',
+            'GU' => 'Guam',
+            'MP' => 'Northern Mariana Islands',
+            'PR' => 'Puerto Rico',
+            'VI' => 'U.S. Virgin Islands'
+    };
 
     public class MeritScholarshipWrapper {
         @AuraEnabled public AwardInfoWrapper AwardInfo;
@@ -43,7 +101,7 @@ public without sharing class MeritScholarshipAwardsController {
     }
 
     @AuraEnabled(Cacheable=true)
-    public static MeritScholarshipWrapper getMeritAwards(String appId/*, String term, String domesticApplicant*/) {
+    public static MeritScholarshipWrapper getMeritAwards(String appId) {
         MeritScholarshipWrapper meritScholarshipWards = new MeritScholarshipWrapper();
         AwardInfoWrapper awardInfo = new AwardInfoWrapper();
         List<DomesticScholarshipsWrapper> domesticScholarshipsList = new List<DomesticScholarshipsWrapper>();
@@ -88,6 +146,8 @@ public without sharing class MeritScholarshipAwardsController {
                             Adj_Missouri_Pathway_Scholarship__c,
                             Nebraska_Pathways_Scholarship__c,
                             Adj_Nebraska_Pathways_Scholarship__c,
+                            Out_of_State_Scholarship__c,
+                            Adj_Out_of_State_Scholarship__c,
                             Sauer_Cristo_Rey_Scholarship__c,
                             Adj_Sauer_Cristo_Rey_Scholarship__c,
                             Adj_Athletic_Revision__c,
@@ -96,7 +156,8 @@ public without sharing class MeritScholarshipAwardsController {
                             Adj_Transfer_PTK_Scholarship__c,
                             INTL_Student_Scholarship_Percent__c,
                             ADJ_INTL_Student_Scholarship_Percent__c,
-                            Related_Scholarship_Name__c
+                            Related_Scholarship_Name__c,
+                            State__c
                     FROM Award__c
                     WHERE Admissions_Application_Id__c = :appId
                     AND (Related_Scholarship_Name__c LIKE 'UG Merit Scholarship%'
@@ -132,6 +193,7 @@ public without sharing class MeritScholarshipAwardsController {
                 domesticScholarshipsList.add(createDomesticScholarships('Athletic Revision Scholarship', 0, a.Adj_Athletic_Revision__c));
                 domesticScholarshipsList.add(createDomesticScholarships('Through the Arches Scholarship', 0, a.Adj_Strategic_Aid_Deployment__c));
                 domesticScholarshipsList.add(createDomesticScholarships('Transfer PTK Scholarship', a.Transfer_PTK_Scholarship__c, a.Adj_Transfer_PTK_Scholarship__c));
+                domesticScholarshipsList.add(createDomesticScholarships(getOutOfStateScholarshipName(a.State__c), a.Out_of_State_Scholarship__c, a.Adj_Out_of_State_Scholarship__c));
 
                 internationalScholarship.scholarshipPercent = a.INTL_Student_Scholarship_Percent__c != null ? a.INTL_Student_Scholarship_Percent__c : 0;
                 internationalScholarship.scholarshipAdjPercent = a.ADJ_INTL_Student_Scholarship_Percent__c != null ? a.ADJ_INTL_Student_Scholarship_Percent__c : 0;
@@ -169,6 +231,11 @@ public without sharing class MeritScholarshipAwardsController {
         System.debug(meritScholarshipWards);
 
         return meritScholarshipWards;
+    }
+
+    public static String getOutOfStateScholarshipName(String stateAbbreviation) {
+        String stateName = String.isNotBlank(stateAbbreviation) ? STATE_NAMES_BY_ABBREVIATION.get(stateAbbreviation.trim().toUpperCase()) : null;
+        return String.isNotBlank(stateName) ? stateName + ' Pathway Scholarship' : 'Out of State Scholarship';
     }
 
     public static DomesticScholarshipsWrapper createDomesticScholarships(String scholarshipName, Decimal scholarshipAmount, Decimal scholarshipAdjAmount) {
