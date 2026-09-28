@@ -217,6 +217,10 @@ export default class MeritScholarshipAwardsLwc extends LightningElement {
                     display.TotalAwardDisplay = parsedAdjAmount > 0;
                 }
 
+                if (AwardInfo.outOfStateAward) {
+                    display.Scholarships = display.Scholarships.filter(s => s.scholarshipName !== "St. Thomas Scholarship");
+                }
+
                 break;
             case "International":
                 if (isCalculated) {

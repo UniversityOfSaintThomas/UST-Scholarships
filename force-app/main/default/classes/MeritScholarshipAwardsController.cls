@@ -3,64 +3,64 @@
  */
 
 public without sharing class MeritScholarshipAwardsController {
-    private static final Map<String, String> STATE_NAMES_BY_ABBREVIATION = new Map<String, String>{
-            'AL' => 'Alabama',
-            'AK' => 'Alaska',
-            'AZ' => 'Arizona',
-            'AR' => 'Arkansas',
-            'CA' => 'California',
-            'CO' => 'Colorado',
-            'CT' => 'Connecticut',
-            'DE' => 'Delaware',
-            'DC' => 'District of Columbia',
-            'FL' => 'Florida',
-            'GA' => 'Georgia',
-            'HI' => 'Hawaii',
-            'ID' => 'Idaho',
-            'IL' => 'Illinois',
-            'IN' => 'Indiana',
-            'IA' => 'Iowa',
-            'KS' => 'Kansas',
-            'KY' => 'Kentucky',
-            'LA' => 'Louisiana',
-            'ME' => 'Maine',
-            'MD' => 'Maryland',
-            'MA' => 'Massachusetts',
-            'MI' => 'Michigan',
-            'MN' => 'Minnesota',
-            'MS' => 'Mississippi',
-            'MO' => 'Missouri',
-            'MT' => 'Montana',
-            'NE' => 'Nebraska',
-            'NV' => 'Nevada',
-            'NH' => 'New Hampshire',
-            'NJ' => 'New Jersey',
-            'NM' => 'New Mexico',
-            'NY' => 'New York',
-            'NC' => 'North Carolina',
-            'ND' => 'North Dakota',
-            'OH' => 'Ohio',
-            'OK' => 'Oklahoma',
-            'OR' => 'Oregon',
-            'PA' => 'Pennsylvania',
-            'RI' => 'Rhode Island',
-            'SC' => 'South Carolina',
-            'SD' => 'South Dakota',
-            'TN' => 'Tennessee',
-            'TX' => 'Texas',
-            'UT' => 'Utah',
-            'VT' => 'Vermont',
-            'VA' => 'Virginia',
-            'WA' => 'Washington',
-            'WV' => 'West Virginia',
-            'WI' => 'Wisconsin',
-            'WY' => 'Wyoming',
-            'AS' => 'American Samoa',
-            'GU' => 'Guam',
-            'MP' => 'Northern Mariana Islands',
-            'PR' => 'Puerto Rico',
-            'VI' => 'U.S. Virgin Islands'
-    };
+//    private static final Map<String, String> STATE_NAMES_BY_ABBREVIATION = new Map<String, String>{
+//            'AL' => 'Alabama',
+//            'AK' => 'Alaska',
+//            'AZ' => 'Arizona',
+//            'AR' => 'Arkansas',
+//            'CA' => 'California',
+//            'CO' => 'Colorado',
+//            'CT' => 'Connecticut',
+//            'DE' => 'Delaware',
+//            'DC' => 'District of Columbia',
+//            'FL' => 'Florida',
+//            'GA' => 'Georgia',
+//            'HI' => 'Hawaii',
+//            'ID' => 'Idaho',
+//            'IL' => 'Illinois',
+//            'IN' => 'Indiana',
+//            'IA' => 'Iowa',
+//            'KS' => 'Kansas',
+//            'KY' => 'Kentucky',
+//            'LA' => 'Louisiana',
+//            'ME' => 'Maine',
+//            'MD' => 'Maryland',
+//            'MA' => 'Massachusetts',
+//            'MI' => 'Michigan',
+//            'MN' => 'Minnesota',
+//            'MS' => 'Mississippi',
+//            'MO' => 'Missouri',
+//            'MT' => 'Montana',
+//            'NE' => 'Nebraska',
+//            'NV' => 'Nevada',
+//            'NH' => 'New Hampshire',
+//            'NJ' => 'New Jersey',
+//            'NM' => 'New Mexico',
+//            'NY' => 'New York',
+//            'NC' => 'North Carolina',
+//            'ND' => 'North Dakota',
+//            'OH' => 'Ohio',
+//            'OK' => 'Oklahoma',
+//            'OR' => 'Oregon',
+//            'PA' => 'Pennsylvania',
+//            'RI' => 'Rhode Island',
+//            'SC' => 'South Carolina',
+//            'SD' => 'South Dakota',
+//            'TN' => 'Tennessee',
+//            'TX' => 'Texas',
+//            'UT' => 'Utah',
+//            'VT' => 'Vermont',
+//            'VA' => 'Virginia',
+//            'WA' => 'Washington',
+//            'WV' => 'West Virginia',
+//            'WI' => 'Wisconsin',
+//            'WY' => 'Wyoming',
+//            'AS' => 'American Samoa',
+//            'GU' => 'Guam',
+//            'MP' => 'Northern Mariana Islands',
+//            'PR' => 'Puerto Rico',
+//            'VI' => 'U.S. Virgin Islands'
+//    };
 
     public class MeritScholarshipWrapper {
         @AuraEnabled public AwardInfoWrapper AwardInfo;
@@ -75,6 +75,7 @@ public without sharing class MeritScholarshipAwardsController {
         @AuraEnabled public Decimal awardAdjAmount;
         @AuraEnabled public String awardAdjReason;
         @AuraEnabled public String scholarshipControllerName;
+        @AuraEnabled public Boolean outOfStateAward;
     }
 
     public class DomesticScholarshipsWrapper {
@@ -175,6 +176,7 @@ public without sharing class MeritScholarshipAwardsController {
                 awardInfo.awardAdjAmount = a.Adj_Award_Amount__c != null ? a.Adj_Award_Amount__c : 0;
                 awardInfo.awardAdjReason = String.isNotBlank(a.Scholarship_Award_Adjust_Reason__c) ? a.Scholarship_Award_Adjust_Reason__c : '';
                 awardInfo.scholarshipControllerName = String.isNotBlank(a.Related_Scholarship_Name__c) ? a.Related_Scholarship_Name__c : '';
+                awardInfo.outOfStateAward = (a.Out_of_State_Scholarship__c != null && a.Out_of_State_Scholarship__c > 0) || (a.Adj_Out_of_State_Scholarship__c != null && a.Adj_Out_of_State_Scholarship__c > 0);
 
                 String scholarshipNameNormalize = awardInfo.scholarshipControllerName == null ? '' : awardInfo.scholarshipControllerName.toLowerCase();
                 String scholarshipNameBaseAmount = scholarshipNameNormalize.contains('ug tr merit scholarship') ? 'UST Transfer Award' : 'St. Thomas Scholarship';
@@ -233,8 +235,8 @@ public without sharing class MeritScholarshipAwardsController {
         return meritScholarshipWards;
     }
 
-    public static String getOutOfStateScholarshipName(String stateAbbreviation) {
-        String stateName = String.isNotBlank(stateAbbreviation) ? STATE_NAMES_BY_ABBREVIATION.get(stateAbbreviation.trim().toUpperCase()) : null;
+    public static String getOutOfStateScholarshipName(String stateName) {
+//        String stateName = String.isNotBlank(stateAbbreviation) ? STATE_NAMES_BY_ABBREVIATION.get(stateAbbreviation.trim().toUpperCase()) : null;
         return String.isNotBlank(stateName) ? stateName + ' Pathway Scholarship' : 'Out of State Scholarship';
     }
 
