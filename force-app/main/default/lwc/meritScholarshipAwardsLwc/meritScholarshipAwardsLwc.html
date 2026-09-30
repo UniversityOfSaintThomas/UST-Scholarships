@@ -10,7 +10,7 @@
                     value={awardToDisplay.Description}>
             </lightning-formatted-rich-text>
         </p>
-        <ul class="slds-list_dotted slds-m-top_x-small">
+        <ul class={listClass}>
             <template for:each={awardToDisplay.Scholarships} for:item="scholarships">
                 <li key={scholarships.scholarshipName} class="slds-m-bottom_xx-small">
                     <template lwc:if={domesticApplicant}>

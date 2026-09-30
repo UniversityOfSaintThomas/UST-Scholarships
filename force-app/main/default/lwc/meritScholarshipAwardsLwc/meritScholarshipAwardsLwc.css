@@ -1,3 +1,10 @@
 /**
  * Created by nguy0092 on 10/13/2025.
  */
+
+/* Removes bullet marker and its indentation when the list has a single item */
+.no-bullet {
+    list-style: none;
+    padding-left: 0;
+    margin-left: 0;
+}

@@ -217,9 +217,9 @@ export default class MeritScholarshipAwardsLwc extends LightningElement {
                     display.TotalAwardDisplay = parsedAdjAmount > 0;
                 }
 
-                if (AwardInfo.outOfStateAward) {
-                    display.Scholarships = display.Scholarships.filter(s => s.scholarshipName !== "St. Thomas Scholarship");
-                }
+                // if (AwardInfo.outOfStateAward) {
+                //     display.Scholarships = display.Scholarships.filter(s => s.scholarshipName !== "St. Thomas Scholarship");
+                // }
 
                 break;
             case "International":
@@ -267,6 +267,13 @@ export default class MeritScholarshipAwardsLwc extends LightningElement {
 
     get domesticApplicant() {
         return this.scholarshipType === 'Domestic' || this.scholarshipType === "Transfer";
+    }
+
+    get listClass() {
+        const hasSingleScholarship = this.awardToDisplay.Scholarships.length <= 1;
+        return hasSingleScholarship
+            ? "no-bullet slds-m-top_x-small"
+            : "slds-list_dotted slds-m-top_x-small";
     }
 
     @wire(getMeritAwards, {appId: "$appRecordId"/*, term: "$termName", domesticApplicant: "$domesticApplicant"*/})
