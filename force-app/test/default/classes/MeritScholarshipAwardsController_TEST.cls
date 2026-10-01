@@ -87,7 +87,9 @@ private class MeritScholarshipAwardsController_TEST {
                 Transfer_PTK_Scholarship__c              = 750,
                 Adj_Transfer_PTK_Scholarship__c          = 700,
                 INTL_Student_Scholarship_Percent__c      = 25,
-                ADJ_INTL_Student_Scholarship_Percent__c  = 20
+                ADJ_INTL_Student_Scholarship_Percent__c  = 20,
+                Out_of_State_Scholarship__c              = 100,
+                Adj_Out_of_State_Scholarship__c          = 90
         );
         insert a;
         return a;
@@ -133,7 +135,7 @@ private class MeritScholarshipAwardsController_TEST {
         Assert.areEqual(4800, result.DomesticScholarshipsList[0].scholarshipAdjAmount);
 
         // 14 domestic scholarship entries total
-        Assert.areEqual(14, result.DomesticScholarshipsList.size(), 'Should have 14 domestic scholarship entries');
+        Assert.areEqual(15, result.DomesticScholarshipsList.size(), 'Should have 14 domestic scholarship entries');
 
         // Opportunity FAFSA
         Assert.isTrue(result.OpportunityFafsa.fafsaFiled, 'FAFSA should be filed');
