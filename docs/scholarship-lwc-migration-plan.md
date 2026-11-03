@@ -100,7 +100,7 @@ flowchart LR
 ```
 
 Apex layer: introduce one `@AuraEnabled`-bearing Apex class per page (e.g.,
-`ScholarshipApplicationPage1LwcController`, `ScholarshipApplicationPage2LwcController`, etc.) that
+`ScholarshipAppPage1LwcController`, `ScholarshipApplicationPage2LwcController`, etc.) that
 wraps/reuses logic from `ScholarshipSharedUtilities`, with all cookie/`ApexPages`-current-page
 dependencies removed and replaced by explicit parameters. Existing VF controllers remain untouched
 (can be deleted in a later cleanup once the VF pages are retired — not part of this plan unless
@@ -140,7 +140,7 @@ requested).
 
 ### Task 3: Build `ScholarshipApplicationPage1` LWC (criteria confirmation)
 
-- Objective: Create `scholarshipCriteriaLwc` + `ScholarshipApplicationPage1LwcController`
+- Objective: Create `scholarshipCriteriaLwc` + `ScholarshipAppPage1LwcController`
   implementing the sanity check (redirect-equivalent), display of scholarship
   name/description/criteria, self-reported GPA/test score inputs (conditionally rendered), and the
   "Confirm and Continue" checkbox + save action using `NavigationMixin` to go to Page 2.

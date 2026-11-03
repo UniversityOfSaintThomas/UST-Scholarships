@@ -4,8 +4,30 @@
 
 public with sharing class scholarshipEligibleListViewController {
 
+    /**
+     * The Contact is derived on the server from the running user. A client supplied contactId is only
+     * honored when the running user has no Contact of their own (e.g. an internal user), so a community
+     * user cannot request another applicant's scholarships by passing a different Id.
+     */
+    @TestVisible
+    private static Id resolveContactId(String suppliedContactId) {
+        Id activeContactId = ScholarshipSharedUtilities.getActiveContactId();
+        if (activeContactId != null) {
+            return activeContactId;
+        }
+        if (String.isBlank(suppliedContactId)) {
+            return null;
+        }
+        try {
+            return Id.valueOf(suppliedContactId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @AuraEnabled(Cacheable=true)
     public static List<scholarshipEligibleAppStatus> eligibleScholarships(String contactId, String appId, String currentPage) {
+        Id resolvedContactId = resolveContactId(contactId);
         List<Application__c> apps = new List<Application__c>();
         Set<Scholarship__c> scholarshipsEligibleSet = new Set<Scholarship__c>();
         List<Scholarship__c> scholarshipsEligibleList = new List<Scholarship__c>();
@@ -35,9 +57,9 @@ public with sharing class scholarshipEligibleListViewController {
 //        appsQuery += ' AND (NOT(Application_Status__c = \'Withdrawn\' AND Application_Substatus__c = \'Multiple App\'))';
 
         if (pagesWithMultipleAppInfo.contains(currentPageName)) {
-            appsQuery += ' AND Contact__c = \'' + contactId + '\'';
+            appsQuery += ' AND Contact__c = :resolvedContactId';
         } else {
-            appsQuery += ' AND Id = \'' + appId + '\'';
+            appsQuery += ' AND Id = :appId';
         }
 
         try {
@@ -117,7 +139,7 @@ public with sharing class scholarshipEligibleListViewController {
                             Scholarship_Status__c
                     FROM Scholarship_Applicant__c
                     WHERE Scholarship__r.Id = :scholarshipIds
-                    AND Contact__c = :contactId
+                    AND Contact__c = :resolvedContactId
                     ORDER BY Scholarship_Date_Started__c DESC
             ];
         }

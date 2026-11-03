@@ -386,4 +386,44 @@ public class ScholarshipController_TEST {
         Test.stopTest();
     }
 
+    @IsTest
+    static void testEligibleScholarshipsResolveContactForUserWithoutContact() {
+        Contact student = [SELECT Id FROM Contact WHERE FirstName = 'student' LIMIT 1];
+
+        // The running (internal) user has no Contact, so the supplied value is used when it is a valid Id.
+        System.assertEquals(student.Id, scholarshipEligibleListViewController.resolveContactId(String.valueOf(student.Id)));
+        System.assertEquals(null, scholarshipEligibleListViewController.resolveContactId(null));
+        System.assertEquals(null, scholarshipEligibleListViewController.resolveContactId(''));
+        System.assertEquals(null, scholarshipEligibleListViewController.resolveContactId('not-an-id'));
+    }
+
+    @IsTest
+    static void testEligibleScholarshipsIgnoresInjectedContactId() {
+        Application__c application = [SELECT Id FROM Application__c LIMIT 1];
+
+        Test.startTest();
+        List<scholarshipEligibleListViewController.scholarshipEligibleAppStatus> results = scholarshipEligibleListViewController.eligibleScholarships(
+                '\' OR Id != null OR Contact__c = \'', application.Id, 'applicationportal');
+        Test.stopTest();
+
+        System.assertEquals(0, results.size(), 'A malformed contactId must not widen the query');
+    }
+
+    @IsTest
+    static void testEligibleScholarshipsCommunityUserCannotSpoofContact() {
+        Contact student = [SELECT Id FROM Contact WHERE FirstName = 'student' LIMIT 1];
+        Contact other = [SELECT Id FROM Contact WHERE FirstName = 'recommender' LIMIT 1];
+
+        User communityUser = userToRunWith(student.Id);
+        insert communityUser;
+
+        System.runAs(communityUser) {
+            Test.startTest();
+            System.assertEquals(student.Id, scholarshipEligibleListViewController.resolveContactId(String.valueOf(other.Id)),
+                    'A community user must always resolve to their own Contact');
+            System.assertEquals(student.Id, scholarshipEligibleListViewController.resolveContactId(null));
+            Test.stopTest();
+        }
+    }
+
 }

@@ -7,9 +7,11 @@ import eligibleScholarships from "@salesforce/apex/scholarshipEligibleListViewCo
 
 export default class ScholarshipEligibleListView extends LightningElement {
 
+    // contactId is optional: the Apex controller derives the Contact from the running user.
+    // On the Experience site no page context supplies these values, so currentPage defaults to the portal view.
     @api contactId;
     @api appId;
-    @api currentPage;
+    @api currentPage = "applicationportal";
     @api widgetDisplay = false;
 
     @track scholarshipLists = [];
