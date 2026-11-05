@@ -51,6 +51,7 @@ public without sharing class MeritScholarshipAwardsController {
         InternationalScholarshipWrapper internationalScholarship = new InternationalScholarshipWrapper();
         OpportunityWrapper opportunityFafsa = new OpportunityWrapper(false, false, false);
         String term;
+        Set<String> uwcExclusions = new Set<String>{'UW01', 'UW02', 'UW03', 'UW04', 'UW05', 'UW06'};
 
         List<Application__c> selectedApp = [
                 SELECT Id,
@@ -99,6 +100,8 @@ public without sharing class MeritScholarshipAwardsController {
                             Adj_Transfer_PTK_Scholarship__c,
                             INTL_Student_Scholarship_Percent__c,
                             ADJ_INTL_Student_Scholarship_Percent__c,
+                            UWC_Attribute_Code__c,
+                            Adj_UWC_Code__c,
                             Related_Scholarship_Name__c,
                             State__c
                     FROM Award__c
@@ -107,6 +110,8 @@ public without sharing class MeritScholarshipAwardsController {
                     OR Related_Scholarship_Name__c LIKE 'UG INTL Merit Scholarship%'
                     OR Related_Scholarship_Name__c LIKE 'UG TR Merit Scholarship%')
                     AND Application_Term__c = :term
+                    AND UWC_Attribute_Code__c NOT IN :uwcExclusions
+                    AND Adj_UWC_Code__c NOT IN :uwcExclusions
                     WITH SECURITY_ENFORCED
                     ORDER BY CreatedDate ASC
                     LIMIT 1
