@@ -16,7 +16,7 @@
                       description="Page shown when the scholarship is closed or not yet open."/>
             <property name="completePageName" type="String" default="Scholarship_Application_Complete__c" label="Complete page API name"
                       description="Page shown when the application has already been submitted."/>
-            <property name="homePageName" type="String" default="Scholarship_Home__c" label="Home page API name"
+            <property name="homePageName" type="String" default="Scholarship_Home_Lwc__c" label="Home page API name"
                       description="Page shown when the scholarship cannot be found."/>
         </targetConfig>
     </targetConfigs>

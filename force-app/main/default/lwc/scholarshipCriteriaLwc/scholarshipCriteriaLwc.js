@@ -25,13 +25,14 @@ export default class ScholarshipCriteriaLwc extends NavigationMixin(LightningEle
     @api nextPageName = "Scholarship_Application_Page_2__c";
     @api closedPageName = "Scholarship_Closed__c";
     @api completePageName = "Scholarship_Application_Complete__c";
-    @api homePageName = "Scholarship_Home__c";
+    @api homePageName = "Scholarship_Home_Lwc__c";
 
     sid;
     pageData;
     isLoading = true;
     isSaving = false;
     errorMessage = "";
+    missingSid = false;
     fieldErrors = NO_ERRORS;
 
     gpa = "";
@@ -108,13 +109,18 @@ export default class ScholarshipCriteriaLwc extends NavigationMixin(LightningEle
     }
 
     async loadPageData() {
+        this.errorMessage = "";
         if (!this.sid) {
-            this.navigateTo(this.homePageName, false);
+            // No scholarship in the URL (for example in the Experience Builder canvas). Explain instead of
+            // redirecting, so the component can be placed and previewed without leaving the page.
+            this.pageData = undefined;
+            this.missingSid = true;
+            this.isLoading = false;
             return;
         }
 
+        this.missingSid = false;
         this.isLoading = true;
-        this.errorMessage = "";
         let redirected = false;
         try {
             const data = await getPageData({sid: this.sid});
@@ -132,6 +138,10 @@ export default class ScholarshipCriteriaLwc extends NavigationMixin(LightningEle
             // Keep the spinner up while the browser navigates away.
             this.isLoading = redirected;
         }
+    }
+
+    handleGoHome() {
+        this.navigateTo(this.homePageName, false);
     }
 
     handleChange(event) {

@@ -130,7 +130,7 @@ describe("c-scholarship-criteria-lwc", () => {
             ["COMPLETE", "Scholarship_Application_Complete__c", {sid: SID}],
             ["CLOSED", "Scholarship_Closed__c", {sid: SID}],
             ["NOT_YET_OPEN", "Scholarship_Closed__c", {sid: SID}],
-            ["NOT_FOUND", "Scholarship_Home__c", {}]
+            ["NOT_FOUND", "Scholarship_Home_Lwc__c", {}]
         ])("navigates away when the status is %s", async (status, pageName, state) => {
             await mountWith({status, configWarnings: []});
 
@@ -140,12 +140,22 @@ describe("c-scholarship-criteria-lwc", () => {
             );
         });
 
-        it("goes to the home page when there is no sid in the URL", async () => {
-            await mountWith(openData(), null);
+        it("explains instead of redirecting when there is no sid in the URL (e.g. Experience Builder)", async () => {
+            const element = await mountWith(openData(), null);
 
             expect(getPageData).not.toHaveBeenCalled();
+            expect(mockNavigate).not.toHaveBeenCalled();
+            expect(q(element, '[data-id="missing-sid"]')).not.toBeNull();
+            expect(q(element, 'lightning-input[data-field="confirmed"]')).toBeNull();
+        });
+
+        it("offers a button to the scholarship list when there is no sid", async () => {
+            const element = await mountWith(openData(), null);
+
+            q(element, 'lightning-button[data-id="go-home"]').click();
+
             expect(mockNavigate).toHaveBeenCalledWith(
-                {type: "comm__namedPage", attributes: {name: "Scholarship_Home__c"}, state: {}},
+                {type: "comm__namedPage", attributes: {name: "Scholarship_Home_Lwc__c"}, state: {}},
                 true
             );
         });

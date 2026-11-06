@@ -21,6 +21,13 @@
         </div>
     </template>
 
+    <template lwc:if={missingSid}>
+        <div class="slds-p-vertical_small" data-id="missing-sid">
+            <p class="slds-text-body_regular slds-m-bottom_small">No scholarship was selected. Choose a scholarship from the scholarship list to begin an application.</p>
+            <lightning-button variant="brand" label="View scholarship list" data-id="go-home" onclick={handleGoHome}></lightning-button>
+        </div>
+    </template>
+
     <template lwc:if={hasData}>
         <div class="slds-grid slds-wrap">
             <div class="slds-col slds-size_1-of-1 slds-p-vertical_x-small">
