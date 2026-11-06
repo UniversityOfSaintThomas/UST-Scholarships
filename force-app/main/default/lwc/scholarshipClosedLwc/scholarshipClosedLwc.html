@@ -1,0 +1,24 @@
+<template>
+    <template lwc:if={isLoading}>
+        <div class="slds-is-relative slds-p-vertical_xx-large">
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </div>
+    </template>
+
+    <template lwc:if={errorMessage}>
+        <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert" data-id="error-message">
+            {errorMessage}
+        </div>
+    </template>
+
+    <template lwc:if={hasData}>
+        <div class="slds-grid slds-wrap">
+            <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
+                <template lwc:if={hasScholarshipName}>
+                    <h1 class="slds-text-heading_large" data-id="name">{scholarshipName}</h1>
+                </template>
+                <p class="slds-text-body_regular" data-id="message">{message}</p>
+            </div>
+        </div>
+    </template>
+</template>

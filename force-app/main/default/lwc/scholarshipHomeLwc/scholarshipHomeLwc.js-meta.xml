@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <description>Scholarship home: heading, user line, Admissions Home link and eligible scholarship list</description>
+    <isExposed>true</isExposed>
+    <masterLabel>Scholarship Home</masterLabel>
+    <targets>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property name="admissionsHomePageName" type="String" default="Home" label="Admissions Home page API name"
+                      description="Experience Builder page API name the Admissions Home link opens."/>
+            <property name="admissionsHomeLabel" type="String" default="Admissions Home" label="Admissions Home link text"/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>
