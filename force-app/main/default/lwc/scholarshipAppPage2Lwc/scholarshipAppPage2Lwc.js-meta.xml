@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <description>Scholarship application Page LWC 2: application questions</description>
+    <isExposed>true</isExposed>
+    <masterLabel>Scholarship Application Page LWC 2</masterLabel>
+    <targets>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property name="previousPageName" type="String" label="Previous page (Page 1) API name"
+                      description="Experience Builder page API name opened by Previous Page, and when the criteria have not been confirmed yet."/>
+            <property name="closedPageName" type="String" label="Closed page API name"
+                      description="Page shown when the scholarship is closed or not yet open."/>
+            <property name="completePageName" type="String" label="Complete page API name"
+                      description="Page shown when the application has already been submitted."/>
+            <property name="homePageName" type="String" label="Home page API name"
+                      description="Page shown when the scholarship cannot be found."/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

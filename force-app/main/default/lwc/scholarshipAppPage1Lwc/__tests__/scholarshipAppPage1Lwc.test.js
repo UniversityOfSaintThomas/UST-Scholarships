@@ -1,5 +1,5 @@
 import {createElement} from "lwc";
-import ScholarshipCriteriaLwc from "c/scholarshipCriteriaLwc";
+import ScholarshipAppPage1Lwc from "c/scholarshipAppPage1Lwc";
 import {CurrentPageReference} from "lightning/navigation";
 import getPageData from "@salesforce/apex/ScholarshipAppPage1LwcController.getPageData";
 import saveCriteria from "@salesforce/apex/ScholarshipAppPage1LwcController.saveCriteria";
@@ -47,7 +47,7 @@ const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 async function mountWith(data, sid = SID) {
     getPageData.mockResolvedValue(data);
-    const element = createElement("c-scholarship-criteria-lwc", {is: ScholarshipCriteriaLwc});
+    const element = createElement("c-scholarship-app-page1-lwc", {is: ScholarshipAppPage1Lwc});
     document.body.appendChild(element);
     CurrentPageReference.emit({state: sid ? {sid} : {}});
     await flushPromises();
@@ -65,7 +65,7 @@ async function clickContinue(element) {
     await flushPromises();
 }
 
-describe("c-scholarship-criteria-lwc", () => {
+describe("c-scholarship-app-page1-lwc", () => {
     afterEach(() => {
         while (document.body.firstChild) {
             document.body.removeChild(document.body.firstChild);
@@ -116,7 +116,7 @@ describe("c-scholarship-criteria-lwc", () => {
 
         it("shows an error when loading fails", async () => {
             getPageData.mockRejectedValue({body: {message: "Boom"}});
-            const element = createElement("c-scholarship-criteria-lwc", {is: ScholarshipCriteriaLwc});
+            const element = createElement("c-scholarship-app-page1-lwc", {is: ScholarshipAppPage1Lwc});
             document.body.appendChild(element);
             CurrentPageReference.emit({state: {sid: SID}});
             await flushPromises();
@@ -127,9 +127,9 @@ describe("c-scholarship-criteria-lwc", () => {
 
     describe("redirects (sanity check)", () => {
         it.each([
-            ["COMPLETE", "Scholarship_Application_Complete__c", {sid: SID}],
-            ["CLOSED", "Scholarship_Closed__c", {sid: SID}],
-            ["NOT_YET_OPEN", "Scholarship_Closed__c", {sid: SID}],
+            ["COMPLETE", "Scholarship_Application_Complete_Lwc__c", {sid: SID}],
+            ["CLOSED", "Scholarship_Closed_Lwc__c", {sid: SID}],
+            ["NOT_YET_OPEN", "Scholarship_Closed_Lwc__c", {sid: SID}],
             ["NOT_FOUND", "Scholarship_Home_Lwc__c", {}]
         ])("navigates away when the status is %s", async (status, pageName, state) => {
             await mountWith({status, configWarnings: []});
@@ -162,7 +162,7 @@ describe("c-scholarship-criteria-lwc", () => {
 
         it("uses page names configured on the component", async () => {
             getPageData.mockResolvedValue({status: "CLOSED", configWarnings: []});
-            const element = createElement("c-scholarship-criteria-lwc", {is: ScholarshipCriteriaLwc});
+            const element = createElement("c-scholarship-app-page1-lwc", {is: ScholarshipAppPage1Lwc});
             element.closedPageName = "Custom_Closed__c";
             document.body.appendChild(element);
             CurrentPageReference.emit({state: {sid: SID}});
@@ -202,7 +202,7 @@ describe("c-scholarship-criteria-lwc", () => {
 
             expect(saveCriteria).toHaveBeenCalledWith({sid: SID, declaredGpa: null, declaredActSat: null, confirmed: true});
             expect(mockNavigate).toHaveBeenCalledWith(
-                {type: "comm__namedPage", attributes: {name: "Scholarship_Application_Page_2__c"}, state: {sid: SID}},
+                {type: "comm__namedPage", attributes: {name: "Scholarship_Application_Page_Lwc_2__c"}, state: {sid: SID}},
                 true
             );
         });
@@ -246,7 +246,7 @@ describe("c-scholarship-criteria-lwc", () => {
 
             await clickContinue(element);
 
-            expect(mockNavigate.mock.calls[0][0].attributes.name).toBe("Scholarship_Closed__c");
+            expect(mockNavigate.mock.calls[0][0].attributes.name).toBe("Scholarship_Closed_Lwc__c");
         });
 
         it("shows a warning toast but still continues when the started email fails", async () => {

@@ -1,5 +1,5 @@
 /**
- * Apex controller for the scholarshipCriteriaLwc component (Page 1 of the scholarship application).
+ * Apex controller for the ScholarshipAppPage1Lwc component (Page 1 of the scholarship application).
  *
  * LWC counterpart of ScholarshipApplicationPage1Controller. It never reads ApexPages, cookies or
  * PageReference: the scholarship id (the "sid" URL parameter) is passed in explicitly, and the

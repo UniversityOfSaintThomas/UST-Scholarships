@@ -18,13 +18,13 @@ const NO_ERRORS = {gpa: null, actSat: null, confirmed: null};
  * The scholarship is identified by the "sid" URL parameter. The applicant is never sent by the client:
  * the Apex controller derives it from the running user.
  */
-export default class ScholarshipCriteriaLwc extends NavigationMixin(LightningElement) {
+export default class ScholarshipAppPage1Lwc extends NavigationMixin(LightningElement) {
 
     // Experience Builder page API names. Editable in Experience Builder, so they can be corrected
     // without a code change if the site's page names differ from these defaults.
-    @api nextPageName = "Scholarship_Application_Page_2__c";
-    @api closedPageName = "Scholarship_Closed__c";
-    @api completePageName = "Scholarship_Application_Complete__c";
+    @api nextPageName = "Scholarship_Application_Page_Lwc_2__c";
+    @api closedPageName = "Scholarship_Closed_Lwc__c";
+    @api completePageName = "Scholarship_Application_Complete_Lwc__c";
     @api homePageName = "Scholarship_Home_Lwc__c";
 
     sid;

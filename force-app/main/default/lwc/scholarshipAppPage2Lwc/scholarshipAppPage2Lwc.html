@@ -1,0 +1,70 @@
+<template>
+    <template lwc:if={isLoading}>
+        <div class="slds-is-relative slds-p-vertical_xx-large">
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </div>
+    </template>
+
+    <template lwc:if={loadError}>
+        <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert" data-id="load-error">
+            {loadError}
+        </div>
+    </template>
+
+    <template lwc:if={missingSid}>
+        <div class="slds-p-vertical_small" data-id="missing-sid">
+            <p class="slds-text-body_regular slds-m-bottom_small">No scholarship was selected. Choose a scholarship from the scholarship list to begin an application.</p>
+            <lightning-button variant="brand" label="View scholarship list" data-id="go-home" onclick={handleGoHome}></lightning-button>
+        </div>
+    </template>
+
+    <template lwc:if={hasData}>
+        <div class="slds-grid slds-wrap">
+            <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
+                <h2 class="slds-text-heading_large" data-id="heading"><strong>{scholarshipName}</strong></h2>
+            </div>
+
+            <div class="slds-col slds-p-top_x-small slds-size_1-of-1">
+                <h2 class="slds-text-heading_medium">Application Questions</h2>
+            </div>
+
+            <template for:each={displayQuestions} for:item="question">
+                <div key={question.questionNumber} class="slds-col slds-p-bottom_x-small slds-size_1-of-1" data-id="question">
+                    <lightning-formatted-rich-text value={question.promptHtml}></lightning-formatted-rich-text>
+                    <lightning-textarea label={question.label} variant="label-hidden" value={question.answer}
+                                        max-length={question.maxLength} data-question={question.questionNumber}
+                                        onchange={handleAnswerChange}></lightning-textarea>
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-form-element__help">This field is required</div>
+                        <div class="slds-form-element__help" data-id="word-count">{question.wordCountLabel}</div>
+                    </div>
+                </div>
+            </template>
+
+            <template lwc:if={saveConfirmed}>
+                <div class="slds-col slds-size_1-of-1 slds-p-top_small">
+                    <div class="slds-notify slds-notify_alert slds-alert_success" role="status" data-id="save-confirmation">
+                        <span><strong>Saved:</strong> Your scholarship application has been saved and you can return to it at any time. Your scholarship will not be submitted until you click “Save &amp; Submit” below.</span>
+                    </div>
+                </div>
+            </template>
+
+            <template lwc:if={saveError}>
+                <div class="slds-col slds-size_1-of-1 slds-p-top_small">
+                    <div class="slds-notify slds-notify_alert slds-alert_error" role="alert" data-id="save-error">
+                        {saveError}
+                    </div>
+                </div>
+            </template>
+
+            <div class="slds-col slds-size_1-of-1 slds-large-size_4-of-12 slds-p-top_medium">
+                <lightning-button variant="neutral" label="Previous Page" data-id="previous-page"
+                                  onclick={handlePreviousPage}></lightning-button>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-large-size_4-of-12 slds-p-top_medium">
+                <lightning-button variant="brand" label="Save &amp; Finish Later" data-id="save-finish-later"
+                                  disabled={isSaving} onclick={handleSaveFinishLater}></lightning-button>
+            </div>
+        </div>
+    </template>
+</template>

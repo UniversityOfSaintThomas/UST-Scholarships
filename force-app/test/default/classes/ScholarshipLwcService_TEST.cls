@@ -33,6 +33,12 @@ private class ScholarshipLwcService_TEST {
         return [SELECT Id FROM Contact WHERE LastName = 'Student' LIMIT 1];
     }
 
+    // The Closed page shows these strings to applicants, formatted in Central Time (CST or CDT).
+    private static void assertCentralTimeDisplay(String displayDateTime) {
+        System.assert(String.isNotBlank(displayDateTime), 'Expected a formatted date/time');
+        System.assert(displayDateTime.endsWith('CST') || displayDateTime.endsWith('CDT'), 'Expected Central Time: ' + displayDateTime);
+    }
+
     private static Scholarship_Applicant__c createApplicant(Id scholarshipId, Id contactId, Boolean complete) {
         Scholarship_Applicant__c applicant = new Scholarship_Applicant__c(
                 Scholarship__c = scholarshipId,
@@ -104,6 +110,10 @@ private class ScholarshipLwcService_TEST {
         Test.stopTest();
 
         System.assertEquals(ScholarshipLwcService.STATUS_CLOSED, result.status);
+        System.assertEquals(scholarship.Id, result.scholarshipRecordId);
+        System.assertEquals(NAME_CLOSED, result.scholarshipName);
+        assertCentralTimeDisplay(result.displayOpenDateTime);
+        assertCentralTimeDisplay(result.displayCloseDateTime);
     }
 
     @IsTest
@@ -115,6 +125,10 @@ private class ScholarshipLwcService_TEST {
         Test.stopTest();
 
         System.assertEquals(ScholarshipLwcService.STATUS_NOT_YET_OPEN, result.status);
+        System.assertEquals(scholarship.Id, result.scholarshipRecordId);
+        System.assertEquals(NAME_NOT_YET_OPEN, result.scholarshipName);
+        assertCentralTimeDisplay(result.displayOpenDateTime);
+        assertCentralTimeDisplay(result.displayCloseDateTime);
     }
 
     @IsTest
