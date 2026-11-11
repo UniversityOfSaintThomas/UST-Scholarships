@@ -41,6 +41,49 @@
                 </div>
             </template>
 
+            <template for:each={displayEssays} for:item="essay">
+                <div key={essay.essayNumber} class="slds-col slds-p-top_x-small slds-p-bottom_x-small slds-size_1-of-1" data-id="essay">
+                    <lightning-formatted-rich-text value={essay.promptHtml}></lightning-formatted-rich-text>
+
+                    <template lwc:if={essay.showDeliveryChoice}>
+                        <lightning-combobox label="I will enter my answer by:" placeholder="--Select--"
+                                            options={deliveryOptions} value={essay.delivery} data-essay={essay.essayNumber}
+                                            data-id="essay-delivery" onchange={handleDeliveryChange}></lightning-combobox>
+                    </template>
+
+                    <template lwc:if={essay.showUpload}>
+                        <div class="slds-p-vertical_x-small" data-id="essay-upload">
+                            <template lwc:if={essay.uploaded}>
+                                <p class="slds-text-body_regular slds-p-bottom_x-small" data-id="essay-uploaded">
+                                    <strong>{essay.uploadedFilename}</strong> has been uploaded to your application.
+                                </p>
+                                <lightning-button variant="neutral" label="Delete and re-upload" data-essay={essay.essayNumber}
+                                                  data-id="essay-delete" disabled={essay.isBusy}
+                                                  onclick={handleDeleteEssayFile}></lightning-button>
+                            </template>
+                            <template lwc:else>
+                                <lightning-file-upload label={essay.label} name="essayFile" record-id={applicantId}
+                                                       accept={allowedExtensions} data-essay={essay.essayNumber}
+                                                       data-id="essay-file-upload" disabled={essay.isBusy}
+                                                       onuploadfinished={handleUploadFinished}></lightning-file-upload>
+                            </template>
+                            <div class="slds-form-element__help" data-id="essay-upload-help">{uploadHelpText}</div>
+                            <template lwc:if={essay.uploadError}>
+                                <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="essay-upload-error">{essay.uploadError}</div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <template lwc:if={essay.showInput}>
+                        <div class="slds-p-vertical_x-small" data-id="essay-input">
+                            <lightning-input-rich-text label={essay.label} value={essay.answerHtml}
+                                                       data-essay={essay.essayNumber} data-id="essay-text"
+                                                       onchange={handleEssayChange}></lightning-input-rich-text>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
             <template lwc:if={saveConfirmed}>
                 <div class="slds-col slds-size_1-of-1 slds-p-top_small">
                     <div class="slds-notify slds-notify_alert slds-alert_success" role="status" data-id="save-confirmation">

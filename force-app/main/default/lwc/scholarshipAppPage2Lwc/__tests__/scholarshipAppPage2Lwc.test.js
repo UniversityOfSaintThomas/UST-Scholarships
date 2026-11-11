@@ -3,6 +3,8 @@ import ScholarshipAppPage2Lwc from "c/scholarshipAppPage2Lwc";
 import {CurrentPageReference} from "lightning/navigation";
 import getPageData from "@salesforce/apex/ScholarshipAppPage2LwcController.getPageData";
 import saveAnswers from "@salesforce/apex/ScholarshipAppPage2LwcController.saveAnswers";
+import attachEssayFile from "@salesforce/apex/ScholarshipAppPage2LwcController.attachEssayFile";
+import deleteEssayFile from "@salesforce/apex/ScholarshipAppPage2LwcController.deleteEssayFile";
 
 // Replace the navigation stub with one that records Navigate calls.
 jest.mock("lightning/navigation", () => {
@@ -24,6 +26,8 @@ jest.mock("lightning/navigation", () => {
 
 jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.getPageData", () => ({default: jest.fn()}), {virtual: true});
 jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.saveAnswers", () => ({default: jest.fn()}), {virtual: true});
+jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.attachEssayFile", () => ({default: jest.fn()}), {virtual: true});
+jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.deleteEssayFile", () => ({default: jest.fn()}), {virtual: true});
 
 const {__mockNavigate: mockNavigate} = require("lightning/navigation");
 
@@ -40,7 +44,10 @@ const question = (questionNumber, overrides = {}) => ({
 const openData = (overrides = {}) => ({
     status: "OPEN",
     scholarshipName: "Test Scholarship",
+    applicantId: "a1Ehs000000EHgyEAG",
+    allowedFileExtensions: [".pdf", ".doc", ".docx", ".txt", ".rtf"],
     questions: [question(1), question(3)],
+    essays: [],
     ...overrides
 });
 
@@ -217,7 +224,8 @@ describe("c-scholarship-app-page2-lwc", () => {
 
             expect(saveAnswers).toHaveBeenCalledWith({
                 sid: SID,
-                answers: {1: "First answer", 3: null}
+                answers: {1: "First answer", 3: null},
+                essayAnswers: {}
             });
             const confirmation = q(element, '[data-id="save-confirmation"]');
             expect(confirmation.textContent).toContain("Saved:");
@@ -325,6 +333,342 @@ describe("c-scholarship-app-page2-lwc", () => {
 
             expect(q(element, '[data-id="save-error"]').textContent).toContain("Server exploded");
             expect(mockNavigate).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("essays", () => {
+        const DOCUMENT_ID = "069000000000001AAA";
+
+        const essay = (essayNumber, overrides = {}) => ({
+            essayNumber,
+            promptHtml: `<p>Essay ${essayNumber} prompt</p>`,
+            allowUpload: true,
+            answerHtml: null,
+            uploaded: false,
+            uploadedFilename: null,
+            ...overrides
+        });
+
+        const essayData = (essays, overrides = {}) => openData({questions: [], essays, ...overrides});
+
+        const combobox = (element, essayNumber) => q(element, `lightning-combobox[data-essay="${essayNumber}"]`);
+        const fileUpload = (element, essayNumber) => q(element, `lightning-file-upload[data-essay="${essayNumber}"]`);
+        const richText = (element, essayNumber) => q(element, `lightning-input-rich-text[data-essay="${essayNumber}"]`);
+        const deleteButton = (element, essayNumber) => q(element, `lightning-button[data-id="essay-delete"][data-essay="${essayNumber}"]`);
+
+        function chooseDelivery(element, essayNumber, value) {
+            combobox(element, essayNumber).dispatchEvent(new CustomEvent("change", {detail: {value}}));
+        }
+
+        function typeEssay(element, essayNumber, value) {
+            richText(element, essayNumber).dispatchEvent(new CustomEvent("change", {detail: {value}}));
+        }
+
+        async function finishUpload(element, essayNumber, files = [{documentId: DOCUMENT_ID, name: "essay.pdf"}]) {
+            fileUpload(element, essayNumber).dispatchEvent(new CustomEvent("uploadfinished", {detail: {files}}));
+            await flushPromises();
+        }
+
+        describe("which controls show", () => {
+            it("shows each essay's prompt", async () => {
+                const element = await mountWith(essayData([essay(1), essay(2)]));
+
+                expect(qAll(element, '[data-id="essay"]')).toHaveLength(2);
+            });
+
+            it("offers the upload or type choice only for essays that allow uploads", async () => {
+                const element = await mountWith(essayData([essay(1, {allowUpload: true}), essay(2, {allowUpload: false})]));
+
+                expect(combobox(element, 1)).not.toBeNull();
+                expect(combobox(element, 2)).toBeNull();
+                expect(combobox(element, 1).options.map((option) => option.value)).toEqual(["upload", "input"]);
+            });
+
+            it("always shows the text editor for an essay that cannot be uploaded", async () => {
+                const element = await mountWith(essayData([essay(1, {allowUpload: false, answerHtml: "<p>Typed</p>"})]));
+
+                expect(richText(element, 1)).not.toBeNull();
+                expect(richText(element, 1).value).toBe("<p>Typed</p>");
+                expect(fileUpload(element, 1)).toBeNull();
+            });
+
+            it("shows neither the editor nor the uploader until a choice is made", async () => {
+                const element = await mountWith(essayData([essay(1)]));
+
+                expect(richText(element, 1)).toBeNull();
+                expect(fileUpload(element, 1)).toBeNull();
+            });
+
+            it("starts on the text editor when text was already typed", async () => {
+                const element = await mountWith(essayData([essay(1, {answerHtml: "<p>Draft</p>"})]));
+
+                expect(combobox(element, 1).value).toBe("input");
+                expect(richText(element, 1).value).toBe("<p>Draft</p>");
+                expect(fileUpload(element, 1)).toBeNull();
+            });
+
+            it("starts on the upload option with the filename when a file was already uploaded", async () => {
+                const element = await mountWith(essayData([essay(1, {uploaded: true, uploadedFilename: "my essay.pdf"})]));
+
+                expect(combobox(element, 1).value).toBe("upload");
+                expect(q(element, '[data-id="essay-uploaded"]').textContent).toContain("my essay.pdf");
+                expect(q(element, '[data-id="essay-uploaded"]').textContent).toContain("has been uploaded to your application.");
+                expect(deleteButton(element, 1)).not.toBeNull();
+                expect(fileUpload(element, 1)).toBeNull();
+            });
+
+            it("switches between the uploader and the editor with the choice", async () => {
+                const element = await mountWith(essayData([essay(1)]));
+
+                chooseDelivery(element, 1, "upload");
+                await flushPromises();
+                expect(fileUpload(element, 1)).not.toBeNull();
+                expect(richText(element, 1)).toBeNull();
+
+                chooseDelivery(element, 1, "input");
+                await flushPromises();
+                expect(fileUpload(element, 1)).toBeNull();
+                expect(richText(element, 1)).not.toBeNull();
+            });
+
+            it("keeps typed text when the applicant switches to upload and back", async () => {
+                const element = await mountWith(essayData([essay(1, {answerHtml: "<p>Draft</p>"})]));
+                typeEssay(element, 1, "<p>Longer draft</p>");
+
+                chooseDelivery(element, 1, "upload");
+                await flushPromises();
+                chooseDelivery(element, 1, "input");
+                await flushPromises();
+
+                expect(richText(element, 1).value).toBe("<p>Longer draft</p>");
+            });
+
+            it("points the uploader at the applicant record and limits the file types", async () => {
+                const element = await mountWith(essayData([essay(1)]));
+                chooseDelivery(element, 1, "upload");
+                await flushPromises();
+
+                expect(fileUpload(element, 1).recordId).toBe("a1Ehs000000EHgyEAG");
+                expect(fileUpload(element, 1).accept).toEqual([".pdf", ".doc", ".docx", ".txt", ".rtf"]);
+                expect(q(element, '[data-id="essay-upload-help"]').textContent).toBe("Please upload a .pdf, .doc, .docx, .txt, or .rtf file.");
+            });
+        });
+
+        describe("uploading a file", () => {
+            async function mountOnUpload() {
+                const element = await mountWith(essayData([essay(1)]));
+                chooseDelivery(element, 1, "upload");
+                await flushPromises();
+                return element;
+            }
+
+            it("confirms the uploaded file with the server by its document id only", async () => {
+                attachEssayFile.mockResolvedValue({success: true, status: "OPEN", uploaded: true, uploadedFilename: "essay.pdf"});
+                const element = await mountOnUpload();
+
+                await finishUpload(element, 1);
+
+                expect(attachEssayFile).toHaveBeenCalledWith({sid: SID, essayNumber: 1, contentDocumentId: DOCUMENT_ID});
+            });
+
+            it("shows the original filename and a delete button once the server accepts the file", async () => {
+                attachEssayFile.mockResolvedValue({success: true, status: "OPEN", uploaded: true, uploadedFilename: "essay.pdf"});
+                const element = await mountOnUpload();
+
+                await finishUpload(element, 1);
+
+                expect(q(element, '[data-id="essay-uploaded"]').textContent).toContain("essay.pdf");
+                expect(deleteButton(element, 1)).not.toBeNull();
+                expect(fileUpload(element, 1)).toBeNull();
+                expect(q(element, '[data-id="essay-upload-error"]')).toBeNull();
+            });
+
+            it("shows an inline error and keeps the uploader when the server rejects the file", async () => {
+                attachEssayFile.mockResolvedValue({
+                    success: false,
+                    status: "OPEN",
+                    message: "Invalid file type. Please upload a .pdf, .doc, .docx, .txt, or .rtf file."
+                });
+                const element = await mountOnUpload();
+
+                await finishUpload(element, 1, [{documentId: DOCUMENT_ID, name: "setup.exe"}]);
+
+                expect(q(element, '[data-id="essay-upload-error"]').textContent).toBe(
+                    "Invalid file type. Please upload a .pdf, .doc, .docx, .txt, or .rtf file."
+                );
+                expect(fileUpload(element, 1)).not.toBeNull();
+                expect(q(element, '[data-id="essay-uploaded"]')).toBeNull();
+                expect(mockNavigate).not.toHaveBeenCalled();
+            });
+
+            it("clears the error when the applicant tries again", async () => {
+                attachEssayFile.mockResolvedValueOnce({success: false, status: "OPEN", message: "Bad file"});
+                attachEssayFile.mockResolvedValueOnce({success: true, status: "OPEN", uploaded: true, uploadedFilename: "good.pdf"});
+                const element = await mountOnUpload();
+                await finishUpload(element, 1);
+                expect(q(element, '[data-id="essay-upload-error"]')).not.toBeNull();
+
+                await finishUpload(element, 1);
+
+                expect(q(element, '[data-id="essay-upload-error"]')).toBeNull();
+                expect(q(element, '[data-id="essay-uploaded"]').textContent).toContain("good.pdf");
+            });
+
+            it("redirects when the scholarship closed during the upload", async () => {
+                attachEssayFile.mockResolvedValue({success: false, status: "CLOSED", message: "closed"});
+                const element = await mountOnUpload();
+
+                await finishUpload(element, 1);
+
+                expect(mockNavigate.mock.calls[0][0].attributes.name).toBe("Scholarship_Closed_Lwc__c");
+            });
+
+            it("shows an error when the Apex call throws", async () => {
+                attachEssayFile.mockRejectedValue({body: {message: "Server exploded"}});
+                const element = await mountOnUpload();
+
+                await finishUpload(element, 1);
+
+                expect(q(element, '[data-id="essay-upload-error"]').textContent).toContain("Server exploded");
+            });
+
+            it("ignores an upload event that carries no files", async () => {
+                const element = await mountOnUpload();
+
+                await finishUpload(element, 1, []);
+
+                expect(attachEssayFile).not.toHaveBeenCalled();
+            });
+
+            it("hides the saved confirmation once a file is uploaded", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                attachEssayFile.mockResolvedValue({success: true, status: "OPEN", uploaded: true, uploadedFilename: "essay.pdf"});
+                const element = await mountOnUpload();
+                await clickButton(element, "save-finish-later");
+                expect(q(element, '[data-id="save-confirmation"]')).not.toBeNull();
+
+                await finishUpload(element, 1);
+
+                expect(q(element, '[data-id="save-confirmation"]')).toBeNull();
+            });
+        });
+
+        describe("deleting a file", () => {
+            const uploadedEssay = () => essay(1, {uploaded: true, uploadedFilename: "essay.pdf"});
+
+            it("deletes through the server and offers the uploader again", async () => {
+                deleteEssayFile.mockResolvedValue({success: true, status: "OPEN", uploaded: false});
+                const element = await mountWith(essayData([uploadedEssay()]));
+
+                deleteButton(element, 1).click();
+                await flushPromises();
+
+                expect(deleteEssayFile).toHaveBeenCalledWith({sid: SID, essayNumber: 1});
+                expect(q(element, '[data-id="essay-uploaded"]')).toBeNull();
+                expect(fileUpload(element, 1)).not.toBeNull();
+            });
+
+            it("shows an inline error and keeps the file when the delete fails", async () => {
+                deleteEssayFile.mockResolvedValue({success: false, status: "OPEN", message: "The essay file could not be deleted."});
+                const element = await mountWith(essayData([uploadedEssay()]));
+
+                deleteButton(element, 1).click();
+                await flushPromises();
+
+                expect(q(element, '[data-id="essay-upload-error"]').textContent).toContain("could not be deleted");
+                expect(q(element, '[data-id="essay-uploaded"]')).not.toBeNull();
+            });
+
+            it("only changes the essay whose delete button was used", async () => {
+                deleteEssayFile.mockResolvedValue({success: true, status: "OPEN", uploaded: false});
+                const element = await mountWith(essayData([uploadedEssay(), essay(2, {uploaded: true, uploadedFilename: "second.pdf"})]));
+
+                deleteButton(element, 1).click();
+                await flushPromises();
+
+                expect(fileUpload(element, 1)).not.toBeNull();
+                expect(fileUpload(element, 2)).toBeNull();
+                expect(q(element, '[data-id="essay-uploaded"]').textContent).toContain("second.pdf");
+            });
+
+            it("redirects when the scholarship closed", async () => {
+                deleteEssayFile.mockResolvedValue({success: false, status: "CLOSED", message: "closed"});
+                const element = await mountWith(essayData([uploadedEssay()]));
+
+                deleteButton(element, 1).click();
+                await flushPromises();
+
+                expect(mockNavigate.mock.calls[0][0].attributes.name).toBe("Scholarship_Closed_Lwc__c");
+            });
+
+            it("shows an error when the Apex call throws", async () => {
+                deleteEssayFile.mockRejectedValue({body: {message: "Server exploded"}});
+                const element = await mountWith(essayData([uploadedEssay()]));
+
+                deleteButton(element, 1).click();
+                await flushPromises();
+
+                expect(q(element, '[data-id="essay-upload-error"]').textContent).toContain("Server exploded");
+            });
+        });
+
+        describe("Save & Finish Later with essays", () => {
+            it("sends the typed essays together with the question answers", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(openData({
+                    questions: [question(1)],
+                    essays: [essay(1, {allowUpload: false}), essay(2, {allowUpload: false})]
+                }));
+                typeAnswer(element, 1, "Short answer");
+                typeEssay(element, 1, "<p>First essay</p>");
+                typeEssay(element, 2, "<p>Second essay</p>");
+
+                await clickButton(element, "save-finish-later");
+
+                expect(saveAnswers).toHaveBeenCalledWith({
+                    sid: SID,
+                    answers: {1: "Short answer"},
+                    essayAnswers: {1: "<p>First essay</p>", 2: "<p>Second essay</p>"}
+                });
+            });
+
+            it("leaves out an essay the applicant is giving as an upload, or has not chosen yet", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(essayData([
+                    essay(1, {answerHtml: "<p>Typed before choosing upload</p>"}),
+                    essay(2)
+                ]));
+                chooseDelivery(element, 1, "upload");
+                await flushPromises();
+
+                await clickButton(element, "save-finish-later");
+
+                expect(saveAnswers).toHaveBeenCalledWith({sid: SID, answers: {}, essayAnswers: {}});
+            });
+
+            it("includes a typed essay for an essay that allows upload when typing was chosen", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(essayData([essay(1)]));
+                chooseDelivery(element, 1, "input");
+                await flushPromises();
+                typeEssay(element, 1, "<p>Pasted essay</p>");
+
+                await clickButton(element, "save-finish-later");
+
+                expect(saveAnswers).toHaveBeenCalledWith({sid: SID, answers: {}, essayAnswers: {1: "<p>Pasted essay</p>"}});
+            });
+
+            it("hides the saved confirmation once an essay is edited", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(essayData([essay(1, {allowUpload: false})]));
+                await clickButton(element, "save-finish-later");
+                expect(q(element, '[data-id="save-confirmation"]')).not.toBeNull();
+
+                typeEssay(element, 1, "<p>More</p>");
+                await flushPromises();
+
+                expect(q(element, '[data-id="save-confirmation"]')).toBeNull();
+            });
         });
     });
 });
