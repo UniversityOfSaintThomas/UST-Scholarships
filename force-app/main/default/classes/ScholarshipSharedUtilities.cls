@@ -300,14 +300,12 @@ public without sharing class ScholarshipSharedUtilities {
     public without sharing class emailUtilities {
 
         public Messaging.SingleEmailMessage createEmail(String emailTemplateId, String emailFromId, String scholarshipApplicationId, String applicantContactId, String EmailToAddress) {
-            Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
-            message = Messaging.renderStoredEmailTemplate(emailTemplateId, applicantContactId, scholarshipApplicationId);
+            Messaging.SingleEmailMessage message = Messaging.renderStoredEmailTemplate(emailTemplateId, applicantContactId, scholarshipApplicationId);
             message.setTreatTargetObjectAsRecipient(false);
             message.setToAddresses(new String[]{EmailToAddress});
             message.setUseSignature(false);
             message.setOrgWideEmailAddressId(emailFromId);
             message.optOutPolicy = 'FILTER';
-            message.setUseSignature(false);
             message.setBccSender(false);
 
             return message;
