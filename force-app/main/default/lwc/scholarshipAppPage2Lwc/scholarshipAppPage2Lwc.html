@@ -1,7 +1,8 @@
 <template>
     <template lwc:if={isLoading}>
         <div class="slds-is-relative slds-p-vertical_xx-large">
-            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            <lightning-spinner alternative-text="Loading"
+                               size="medium"></lightning-spinner>
         </div>
     </template>
 
@@ -14,7 +15,10 @@
     <template lwc:if={missingSid}>
         <div class="slds-p-vertical_small" data-id="missing-sid">
             <p class="slds-text-body_regular slds-m-bottom_small">No scholarship was selected. Choose a scholarship from the scholarship list to begin an application.</p>
-            <lightning-button variant="brand" label="View scholarship list" data-id="go-home" onclick={handleGoHome}></lightning-button>
+            <lightning-button variant="brand"
+                              label="View scholarship list"
+                              data-id="go-home"
+                              onclick={handleGoHome}></lightning-button>
         </div>
     </template>
 
@@ -31,13 +35,19 @@
             <template for:each={displayQuestions} for:item="question">
                 <div key={question.questionNumber} class="slds-col slds-p-bottom_x-small slds-size_1-of-1" data-id="question">
                     <lightning-formatted-rich-text value={question.promptHtml}></lightning-formatted-rich-text>
-                    <lightning-textarea label={question.label} variant="label-hidden" value={question.answer}
-                                        max-length={question.maxLength} data-question={question.questionNumber}
+                    <lightning-textarea label={question.label}
+                                        variant="label-hidden"
+                                        value={question.answer}
+                                        max-length={question.maxLength}
+                                        data-question={question.questionNumber}
                                         onchange={handleAnswerChange}></lightning-textarea>
                     <div class="slds-grid slds-grid_align-spread">
                         <div class="slds-form-element__help">This field is required</div>
                         <div class="slds-form-element__help" data-id="word-count">{question.wordCountLabel}</div>
                     </div>
+                    <template lwc:if={question.errorText}>
+                        <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="question-error">{question.errorText}</div>
+                    </template>
                 </div>
             </template>
 
@@ -46,9 +56,13 @@
                     <lightning-formatted-rich-text value={essay.promptHtml}></lightning-formatted-rich-text>
 
                     <template lwc:if={essay.showDeliveryChoice}>
-                        <lightning-combobox label="I will enter my answer by:" placeholder="--Select--"
-                                            options={deliveryOptions} value={essay.delivery} data-essay={essay.essayNumber}
-                                            data-id="essay-delivery" onchange={handleDeliveryChange}></lightning-combobox>
+                        <lightning-combobox label="I will enter my answer by:"
+                                            placeholder="--Select--"
+                                            options={deliveryOptions}
+                                            value={essay.delivery}
+                                            data-essay={essay.essayNumber}
+                                            data-id="essay-delivery"
+                                            onchange={handleDeliveryChange}></lightning-combobox>
                     </template>
 
                     <template lwc:if={essay.showUpload}>
@@ -57,14 +71,21 @@
                                 <p class="slds-text-body_regular slds-p-bottom_x-small" data-id="essay-uploaded">
                                     <strong>{essay.uploadedFilename}</strong> has been uploaded to your application.
                                 </p>
-                                <lightning-button variant="neutral" label="Delete and re-upload" data-essay={essay.essayNumber}
-                                                  data-id="essay-delete" disabled={essay.isBusy}
+                                <lightning-button variant="neutral"
+                                                  label="Delete and re-upload"
+                                                  data-essay={essay.essayNumber}
+                                                  data-id="essay-delete"
+                                                  disabled={essay.isBusy}
                                                   onclick={handleDeleteEssayFile}></lightning-button>
                             </template>
                             <template lwc:else>
-                                <lightning-file-upload label={essay.label} name="essayFile" record-id={applicantId}
-                                                       accept={allowedExtensions} data-essay={essay.essayNumber}
-                                                       data-id="essay-file-upload" disabled={essay.isBusy}
+                                <lightning-file-upload label={essay.label}
+                                                       name="essayFile"
+                                                       record-id={applicantId}
+                                                       accept={allowedExtensions}
+                                                       data-essay={essay.essayNumber}
+                                                       data-id="essay-file-upload"
+                                                       disabled={essay.isBusy}
                                                        onuploadfinished={handleUploadFinished}></lightning-file-upload>
                             </template>
                             <div class="slds-form-element__help" data-id="essay-upload-help">{uploadHelpText}</div>
@@ -76,11 +97,85 @@
 
                     <template lwc:if={essay.showInput}>
                         <div class="slds-p-vertical_x-small" data-id="essay-input">
-                            <lightning-input-rich-text label={essay.label} value={essay.answerHtml}
-                                                       data-essay={essay.essayNumber} data-id="essay-text"
+                            <lightning-input-rich-text label={essay.label}
+                                                       value={essay.answerHtml}
+                                                       data-essay={essay.essayNumber}
+                                                       data-id="essay-text"
                                                        onchange={handleEssayChange}></lightning-input-rich-text>
                         </div>
                     </template>
+                    <template lwc:if={essay.errorText}>
+                        <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="essay-error">{essay.errorText}</div>
+                    </template>
+                </div>
+            </template>
+
+            <template for:each={displayRecommenders} for:item="recommender">
+                <div key={recommender.recommenderNumber} class="slds-col slds-p-vertical_x-small slds-size_1-of-1" data-id="recommender">
+                    <h3 class="slds-text-heading_medium" data-id="recommender-heading">{recommender.heading}</h3>
+                    <template lwc:if={recommender.hasDescription}>
+                        <lightning-formatted-rich-text value={recommender.descriptionHtml}></lightning-formatted-rich-text>
+                    </template>
+                    <lightning-input type="text"
+                                     label="Name"
+                                     value={recommender.name}
+                                     max-length="80"
+                                     disabled={recommender.isLocked}
+                                     data-recommender={recommender.recommenderNumber}
+                                     data-field="name"
+                                     data-id="recommender-name"
+                                     onchange={handleRecommenderChange}></lightning-input>
+                    <div class="slds-form-element__help">This field is required.</div>
+                    <template lwc:if={recommender.nameError}>
+                        <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="recommender-name-error">{recommender.nameError}</div>
+                    </template>
+                    <lightning-input type="email"
+                                     label="Email"
+                                     value={recommender.email}
+                                     disabled={recommender.isLocked}
+                                     data-recommender={recommender.recommenderNumber}
+                                     data-field="email"
+                                     data-id="recommender-email"
+                                     onchange={handleRecommenderChange}></lightning-input>
+                    <div class="slds-form-element__help">Please enter a valid email address.</div>
+                    <template lwc:if={recommender.emailError}>
+                        <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="recommender-email-error">{recommender.emailError}</div>
+                    </template>
+                    <div class="slds-p-vertical_small">
+                        <template lwc:if={recommender.isLocked}>
+                            <p class="slds-text-body_regular" data-id="recommender-sent">{recommender.sentText}</p>
+                        </template>
+                        <template lwc:else>
+                            <lightning-button variant="neutral"
+                                              label="Request Now"
+                                              disabled={recommender.requestDisabled}
+                                              data-recommender={recommender.recommenderNumber}
+                                              data-id="recommender-request"
+                                              onclick={handleRequestRecommendation}></lightning-button>
+                        </template>
+                        <template lwc:if={recommender.requestError}>
+                            <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="recommender-error">{recommender.requestError}</div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <template lwc:if={hasCompletionStatement}>
+                <div class="slds-col slds-p-top_medium slds-size_1-of-1" data-id="completion">
+                    <h2 class="slds-text-heading_medium">Digital Consent &amp; Submit</h2>
+                    <lightning-formatted-rich-text value={completionStatementHtml}></lightning-formatted-rich-text>
+                    <div class="slds-size_1-of-1 slds-size_6-of-12 slds-p-top_x-small slds-p-bottom_medium">
+                        <lightning-input type="text"
+                                         label="By initialing here you agree to the above statement."
+                                         value={signature}
+                                         max-length="30"
+                                         data-id="signature"
+                                         onchange={handleSignatureChange}></lightning-input>
+                        <div class="slds-form-element__help">This field is required</div>
+                        <template lwc:if={signatureError}>
+                            <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="signature-error">{signatureError}</div>
+                        </template>
+                    </div>
                 </div>
             </template>
 
@@ -100,13 +195,34 @@
                 </div>
             </template>
 
+            <template lwc:if={hasSubmitErrors}>
+                <div class="slds-col slds-size_1-of-1 slds-p-top_small">
+                    <div class="slds-notify slds-notify_alert slds-alert_error" role="alert" data-id="submit-summary">
+                        Please complete the required fields shown above before submitting.
+                    </div>
+                </div>
+            </template>
+
             <div class="slds-col slds-size_1-of-1 slds-large-size_4-of-12 slds-p-top_medium">
-                <lightning-button variant="neutral" label="Previous Page" data-id="previous-page"
+                <lightning-button variant="neutral"
+                                  label="Previous Page"
+                                  data-id="previous-page"
                                   onclick={handlePreviousPage}></lightning-button>
             </div>
             <div class="slds-col slds-size_1-of-1 slds-large-size_4-of-12 slds-p-top_medium">
-                <lightning-button variant="brand" label="Save &amp; Finish Later" data-id="save-finish-later"
-                                  disabled={isSaving} onclick={handleSaveFinishLater}></lightning-button>
+                <lightning-button variant="brand"
+                                  label="Save &amp; Finish Later"
+                                  data-id="save-finish-later"
+                                  disabled={isSaving}
+                                  onclick={handleSaveFinishLater}></lightning-button>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-large-size_4-of-12 slds-p-top_medium">
+                <lightning-button variant="brand"
+                                  label="Save &amp; Submit"
+                                  data-id="save-submit"
+                                  disabled={isSaving}
+                                  onclick={handleSubmit}></lightning-button>
+                <p class="slds-text-body_small slds-p-top_x-small" data-id="submit-note">Save &amp; Submit will send any unsent recommendation requests.</p>
             </div>
         </div>
     </template>

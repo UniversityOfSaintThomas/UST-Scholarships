@@ -1,0 +1,52 @@
+<template>
+    <template lwc:if={isLoading}>
+        <div class="slds-is-relative slds-p-vertical_xx-large">
+            <lightning-spinner alternative-text="Loading"
+                               size="medium"></lightning-spinner>
+        </div>
+    </template>
+
+    <template lwc:if={loadError}>
+        <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert" data-id="load-error">
+            {loadError}
+        </div>
+    </template>
+
+    <template lwc:if={missingSid}>
+        <div class="slds-p-vertical_small" data-id="missing-sid">
+            <p class="slds-text-body_regular slds-m-bottom_small">No scholarship was selected. Choose a scholarship from the scholarship list to begin an application.</p>
+            <lightning-button variant="brand"
+                              label="View scholarship list"
+                              data-id="go-home"
+                              onclick={handleGoHome}></lightning-button>
+        </div>
+    </template>
+
+    <template lwc:if={hasData}>
+        <div class="slds-grid slds-wrap">
+            <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
+                <h2 class="slds-text-heading_large" data-id="heading"><strong>{scholarshipName}</strong></h2>
+            </div>
+            <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
+                <p class="slds-text-body_regular" data-id="confirmation">{confirmationText}</p>
+
+                <template lwc:if={hasRecommenders}>
+                    <div class="slds-p-top_small" data-id="recommenders">
+                        <b data-id="recommenders-heading">{recommendersHeading}</b>
+                        <template for:each={displayRecommenders} for:item="recommender">
+                            <div key={recommender.recommenderNumber} data-id="recommender">
+                                <span data-id="recommender-summary">{recommender.summary}</span>
+                                <span class="slds-m-left_x-small" data-id="recommender-status">{recommender.statusText}</span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <h2 class="slds-text-heading_medium slds-p-vertical_small" data-id="what-next">What happens next?</h2>
+                <template lwc:if={hasDescription}>
+                    <lightning-formatted-rich-text value={descriptionHtml}></lightning-formatted-rich-text>
+                </template>
+            </div>
+        </div>
+    </template>
+</template>

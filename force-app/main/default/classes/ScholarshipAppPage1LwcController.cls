@@ -42,8 +42,11 @@ public with sharing class ScholarshipAppPage1LwcController {
     /**
      * Everything Page 1 needs to render, plus the access status. The LWC redirects when the status
      * is anything other than OPEN. Not cacheable: depends on the current time and the applicant's record.
+     *
+     * @param sid The scholarship id from the "sid" URL parameter.
+     * @return The scholarship content, the applicant's saved values, the setup warnings and the access status.
      */
-    @AuraEnabled(Cacheable=false)
+    @AuraEnabled(cacheable=false)
     public static PageData getPageData(String sid) {
         return buildPageData(sid, ScholarshipSharedUtilities.getActiveContactId(), ScholarshipLwcService.getAccessStatus(sid));
     }
@@ -52,8 +55,14 @@ public with sharing class ScholarshipAppPage1LwcController {
      * Mirrors SaveCriteria() in the VF controller: creates or updates the running user's
      * Scholarship_Applicant__c, stamps the start date once and sends the "started" email once.
      * Only the confirmation and self-reported values are accepted from the client.
+     *
+     * @param sid The scholarship id from the "sid" URL parameter.
+     * @param declaredGpa The applicant's self-reported GPA, or null when the scholarship does not ask for it.
+     * @param declaredActSat The applicant's self-reported ACT or SAT score, or null when the scholarship does not ask for it.
+     * @param confirmed Whether the applicant confirmed that they meet the eligibility criteria.
+     * @return Whether the save succeeded, the access status, and a message when it did not.
      */
-    @AuraEnabled(Cacheable=false)
+    @AuraEnabled(cacheable=false)
     public static SaveResult saveCriteria(String sid, Decimal declaredGpa, Decimal declaredActSat, Boolean confirmed) {
         return saveCriteriaForContact(sid, declaredGpa, declaredActSat, confirmed,
                 ScholarshipSharedUtilities.getActiveContactId(), ScholarshipLwcService.getAccessStatus(sid));
@@ -163,6 +172,11 @@ public with sharing class ScholarshipAppPage1LwcController {
     /**
      * Returns false if the "started" email could not be built or sent. The application is already
      * saved at this point, so a failure only produces a warning for the applicant.
+     *
+     * @param scholarship The scholarship whose "started" email template and sender are used.
+     * @param applicantId The applicant record the email is about.
+     * @param contactId The applicant's Contact id.
+     * @return True if the email was sent, false if it could not be built or sent.
      */
     private static Boolean sendStartedEmail(Scholarship__c scholarship, Id applicantId, Id contactId) {
         try {
@@ -182,6 +196,12 @@ public with sharing class ScholarshipAppPage1LwcController {
 
     /**
      * Server side authority for the rules the browser also checks (see criteriaValidation.js).
+     *
+     * @param selfReportRequired Whether the scholarship asks for a self-reported GPA and ACT/SAT score.
+     * @param declaredGpa The self-reported GPA.
+     * @param declaredActSat The self-reported ACT or SAT score.
+     * @param confirmed Whether the applicant confirmed the eligibility criteria.
+     * @return The validation messages, empty when the values are valid.
      */
     @TestVisible
     private static List<String> validate(Boolean selfReportRequired, Decimal declaredGpa, Decimal declaredActSat, Boolean confirmed) {
@@ -204,6 +224,9 @@ public with sharing class ScholarshipAppPage1LwcController {
 
     /**
      * Same administrator-facing setup checks the VF page showed through ApexPages.addMessage.
+     *
+     * @param scholarship The scholarship to check.
+     * @return The setup warnings, empty when nothing is missing.
      */
     @TestVisible
     private static List<String> configWarnings(Scholarship__c scholarship) {

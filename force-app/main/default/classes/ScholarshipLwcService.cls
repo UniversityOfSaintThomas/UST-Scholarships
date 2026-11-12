@@ -29,8 +29,11 @@ public with sharing class ScholarshipLwcService {
 
     /**
      * Pure read of the scholarship for an sid. Returns null when sid is blank or unknown.
+     *
+     * @param sid The scholarship id from the "sid" URL parameter.
+     * @return The scholarship, or null when sid is blank or unknown.
      */
-    @AuraEnabled(Cacheable=true)
+    @AuraEnabled(cacheable=true)
     public static Scholarship__c getScholarshipInfo(String sid) {
         return new ScholarshipReader().getBySid(sid);
     }
@@ -38,8 +41,11 @@ public with sharing class ScholarshipLwcService {
     /**
      * The running user's applicant record for a scholarship, or a new unsaved record if none exists.
      * Not cacheable: the result is user specific and changes after every save.
+     *
+     * @param scholarshipRecordId The Scholarship__c record id.
+     * @return The running user's applicant record, or a new unsaved record if none exists.
      */
-    @AuraEnabled(Cacheable=false)
+    @AuraEnabled(cacheable=false)
     public static Scholarship_Applicant__c getApplicantInfo(Id scholarshipRecordId) {
         return getApplicantForContact(scholarshipRecordId, ScholarshipSharedUtilities.getActiveContactId());
     }
@@ -47,14 +53,20 @@ public with sharing class ScholarshipLwcService {
     /**
      * Whether the running user may work on this scholarship right now, and if not, why.
      * Not cacheable: depends on the current time and on the applicant's current record.
+     *
+     * @param sid The scholarship id from the "sid" URL parameter.
+     * @return The access status with the scholarship's name and its open and close times in Central Time.
      */
-    @AuraEnabled(Cacheable=false)
+    @AuraEnabled(cacheable=false)
     public static AccessResult getAccessStatus(String sid) {
         return evaluateAccess(sid, ScholarshipSharedUtilities.getActiveContactId());
     }
 
     /**
      * Open/close check on a scholarship, using the same Central Time logic as the VF flow.
+     *
+     * @param scholarship The scholarship to check.
+     * @return True when the scholarship is open right now.
      */
     public static Boolean isScholarshipOpen(Scholarship__c scholarship) {
         return ScholarshipSharedUtilities.isScholarshipOpen(scholarship);

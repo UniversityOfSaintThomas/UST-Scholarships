@@ -1,7 +1,8 @@
 <template>
     <template lwc:if={isLoading}>
         <div class="slds-is-relative slds-p-vertical_xx-large">
-            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            <lightning-spinner alternative-text="Loading"
+                               size="medium"></lightning-spinner>
         </div>
     </template>
 
@@ -24,7 +25,10 @@
     <template lwc:if={missingSid}>
         <div class="slds-p-vertical_small" data-id="missing-sid">
             <p class="slds-text-body_regular slds-m-bottom_small">No scholarship was selected. Choose a scholarship from the scholarship list to begin an application.</p>
-            <lightning-button variant="brand" label="View scholarship list" data-id="go-home" onclick={handleGoHome}></lightning-button>
+            <lightning-button variant="brand"
+                              label="View scholarship list"
+                              data-id="go-home"
+                              onclick={handleGoHome}></lightning-button>
         </div>
     </template>
 
@@ -51,8 +55,12 @@
             <template lwc:if={selfReportRequired}>
                 <div class="slds-p-top_x-small slds-p-bottom_small slds-p-right_small slds-size_1-of-1 slds-size_6-of-12">
                     <div class={gpaWrapperClass}>
-                        <lightning-input type="number" step="0.01" label="Self report your GPA:" data-field="gpa"
-                                         value={gpa} onchange={handleChange}></lightning-input>
+                        <lightning-input type="number"
+                                         step="0.01"
+                                         label="Self report your GPA:"
+                                         data-field="gpa"
+                                         value={gpa}
+                                         onchange={handleChange}></lightning-input>
                         <div class="slds-form-element__help" data-id="gpa-help">Please enter a valid GPA (example 3.5).</div>
                         <template lwc:if={gpaError}>
                             <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="gpa-error">{gpaError}</div>
@@ -61,8 +69,12 @@
                 </div>
                 <div class="slds-p-vertical_x-small slds-size_1-of-1 slds-size_6-of-12">
                     <div class={actSatWrapperClass}>
-                        <lightning-input type="number" step="1" label="Self report your ACT or SAT:" data-field="actSat"
-                                         value={actSat} onchange={handleChange}></lightning-input>
+                        <lightning-input type="number"
+                                         step="1"
+                                         label="Self report your ACT or SAT:"
+                                         data-field="actSat"
+                                         value={actSat}
+                                         onchange={handleChange}></lightning-input>
                         <div class="slds-form-element__help" data-id="actsat-help">Please enter a valid ACT/SAT score (example 27).</div>
                         <template lwc:if={actSatError}>
                             <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="actsat-error">{actSatError}</div>
@@ -73,8 +85,11 @@
 
             <div class="slds-col slds-p-top_x-small slds-p-bottom_medium slds-size_1-of-1">
                 <div class={confirmWrapperClass}>
-                    <lightning-input type="checkbox" label={confirmLabel} data-field="confirmed"
-                                     checked={confirmed} onchange={handleChange}></lightning-input>
+                    <lightning-input type="checkbox"
+                                     label={confirmLabel}
+                                     data-field="confirmed"
+                                     checked={confirmed}
+                                     onchange={handleChange}></lightning-input>
                     <div class="slds-form-element__help">You must acknowledge you understand and meet the criteria outlined on this page to proceed. Signify this by checking the confirmation checkbox.</div>
                     <template lwc:if={confirmedError}>
                         <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="confirmed-error">{confirmedError}</div>
@@ -83,8 +98,11 @@
             </div>
 
             <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
-                <lightning-button variant="brand" label="Confirm and Continue" data-id="continue"
-                                  disabled={isSaving} onclick={handleSave}></lightning-button>
+                <lightning-button variant="brand"
+                                  label="Confirm and Continue"
+                                  data-id="continue"
+                                  disabled={isSaving}
+                                  onclick={handleSave}></lightning-button>
             </div>
         </div>
     </template>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <description>Scholarship application confirmation after submit</description>
+    <isExposed>true</isExposed>
+    <masterLabel>Scholarship Application Complete</masterLabel>
+    <targets>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property name="applicationPageName" type="String" label="Application page (Page 2) API name"
+                      description="Page opened when the application has not been submitted yet."/>
+            <property name="closedPageName" type="String" label="Closed page API name"
+                      description="Page shown when the scholarship is closed or not yet open and the application was not submitted."/>
+            <property name="homePageName" type="String" label="Home page API name"
+                      description="Page shown when the scholarship cannot be found."/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

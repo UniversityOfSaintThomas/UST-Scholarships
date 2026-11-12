@@ -5,8 +5,12 @@ import getPageData from "@salesforce/apex/ScholarshipAppPage2LwcController.getPa
 import saveAnswers from "@salesforce/apex/ScholarshipAppPage2LwcController.saveAnswers";
 import attachEssayFile from "@salesforce/apex/ScholarshipAppPage2LwcController.attachEssayFile";
 import deleteEssayFile from "@salesforce/apex/ScholarshipAppPage2LwcController.deleteEssayFile";
+import requestRecommendation from "@salesforce/apex/ScholarshipAppPage2LwcController.requestRecommendation";
+import submitApplication from "@salesforce/apex/ScholarshipAppPage2LwcController.submitApplication";
 import {countWords} from "./wordCount";
 import {allowedExtensionsText, DELIVERY_INPUT, DELIVERY_OPTIONS, DELIVERY_UPLOAD, initialDelivery} from "./essayHelpers";
+import {canRequestRecommendation} from "./recommenderHelpers";
+import {errorsFromInvalidFields, validateForSubmit} from "./submitValidation";
 
 // Values returned by ScholarshipLwcService.getAccessStatus() plus the Page 2 specific CRITERIA_REQUIRED.
 const STATUS_OPEN = "OPEN";
@@ -21,10 +25,13 @@ const SAVED_MESSAGE = "Your scholarship application has been saved and you can r
 
 /**
  * Page 2 of the scholarship application (LWC replacement for the ScholarshipApplicationPage2 VF page),
- * currently covering the application questions and the essays. The scholarship is identified by the "sid"
- * URL parameter. The applicant is never chosen by the client: the Apex controller derives it from the
- * running user. Essay files are stored by lightning-file-upload on the applicant record, then confirmed
- * with the server, which checks the file before marking the essay as uploaded.
+ * currently covering the application questions, the essays and the recommender requests. The scholarship
+ * is identified by the "sid" URL parameter. The applicant is never chosen by the client: the Apex
+ * controller derives it from the running user. Essay files are stored by lightning-file-upload on the
+ * applicant record, then confirmed with the server, which checks the file before marking the essay as
+ * uploaded. A recommender's request email is sent by the server only when "Request Now" is used, or by
+ * Save & Submit for any request still pending. Save & Submit checks the application in the browser first
+ * (submitValidation.js), and the server checks it again before marking the application complete.
  */
 export default class ScholarshipAppPage2Lwc extends NavigationMixin(LightningElement) {
 
@@ -38,6 +45,7 @@ export default class ScholarshipAppPage2Lwc extends NavigationMixin(LightningEle
     pageData;
     questions = [];
     essays = [];
+    recommenders = [];
     applicantId;
     allowedExtensions = [];
     isLoading = true;
@@ -46,6 +54,10 @@ export default class ScholarshipAppPage2Lwc extends NavigationMixin(LightningEle
     loadError = "";
     saveError = "";
     saveConfirmed = false;
+    signature = "";
+    completionStatementHtml = "";
+    // Problems found by Save & Submit, keyed like the server names fields, for example "question:1" or "signature".
+    submitErrors = {};
 
     _pageReferenceHandled = false;
 
@@ -72,7 +84,8 @@ export default class ScholarshipAppPage2Lwc extends NavigationMixin(LightningEle
         return this.questions.map((question) => ({
             ...question,
             label: `Answer to question ${question.questionNumber}`,
-            wordCountLabel: `Word count: ${countWords(question.answer)}`
+            wordCountLabel: `Word count: ${countWords(question.answer)}`,
+            errorText: this.submitErrors[`question:${question.questionNumber}`]
         }));
     }
 
@@ -91,8 +104,38 @@ export default class ScholarshipAppPage2Lwc extends NavigationMixin(LightningEle
             // Only essays that allow uploads offer the choice; the others are always typed.
             showDeliveryChoice: essay.allowUpload,
             showUpload: essay.allowUpload && essay.delivery === DELIVERY_UPLOAD,
-            showInput: !essay.allowUpload || essay.delivery === DELIVERY_INPUT
+            showInput: !essay.allowUpload || essay.delivery === DELIVERY_INPUT,
+            errorText: this.submitErrors[`essay:${essay.essayNumber}`]
         }));
+    }
+
+    get displayRecommenders() {
+        return this.recommenders.map((recommender) => {
+            // Once the request was sent the name and email are locked, as on the VF page.
+            const isLocked = !!recommender.requestedOn;
+            return {
+                ...recommender,
+                heading: `Recommendation ${recommender.recommenderNumber}${recommender.required ? "" : " (Optional)"}`,
+                hasDescription: !!recommender.descriptionHtml,
+                isLocked,
+                requestDisabled: recommender.isBusy || !canRequestRecommendation(recommender.name, recommender.email),
+                sentText: `Recommendation request sent on ${recommender.requestedOn}.`,
+                nameError: this.submitErrors[`recommender:${recommender.recommenderNumber}:name`],
+                emailError: this.submitErrors[`recommender:${recommender.recommenderNumber}:email`]
+            };
+        });
+    }
+
+    get hasCompletionStatement() {
+        return !!this.completionStatementHtml;
+    }
+
+    get signatureError() {
+        return this.submitErrors.signature;
+    }
+
+    get hasSubmitErrors() {
+        return Object.keys(this.submitErrors).length > 0;
     }
 
     async loadPageData() {
@@ -127,6 +170,16 @@ export default class ScholarshipAppPage2Lwc extends NavigationMixin(LightningEle
                 uploadError: "",
                 isBusy: false
             }));
+            this.recommenders = (data.recommenders || []).map((recommender) => ({
+                ...recommender,
+                name: recommender.name || "",
+                email: recommender.email || "",
+                requestError: "",
+                isBusy: false
+            }));
+            this.completionStatementHtml = data.completionStatementHtml || "";
+            this.signature = data.signature || "";
+            this.submitErrors = {};
         } catch (error) {
             this.loadError = this.reduceError(error);
         } finally {
@@ -141,7 +194,27 @@ export default class ScholarshipAppPage2Lwc extends NavigationMixin(LightningEle
         this.questions = this.questions.map((question) => {
             return question.questionNumber === questionNumber ? {...question, answer} : question;
         });
+        this.clearSubmitErrors(`question:${questionNumber}`);
         this.saveConfirmed = false;
+    }
+
+    handleSignatureChange(event) {
+        this.signature = event.detail.value;
+        this.clearSubmitErrors("signature");
+        this.saveConfirmed = false;
+    }
+
+    /**
+     * Removes the Save & Submit problems shown for fields the applicant has just changed.
+     *
+     * @param {...string} keys Field names such as "question:1" or "recommender:1:name".
+     */
+    clearSubmitErrors(...keys) {
+        if (keys.some((key) => this.submitErrors[key])) {
+            const remaining = {...this.submitErrors};
+            keys.forEach((key) => delete remaining[key]);
+            this.submitErrors = remaining;
+        }
     }
 
     handleDeliveryChange(event) {
@@ -221,28 +294,178 @@ export default class ScholarshipAppPage2Lwc extends NavigationMixin(LightningEle
         this.essays = this.essays.map((essay) => {
             return essay.essayNumber === essayNumber ? {...essay, ...changes} : essay;
         });
+        // Choosing, typing, uploading or deleting changes what Save & Submit would find, so drop its old complaint.
+        if ("delivery" in changes || "answerHtml" in changes || "uploaded" in changes) {
+            this.clearSubmitErrors(`essay:${essayNumber}`);
+        }
     }
 
-    async handleSaveFinishLater() {
+    handleRecommenderChange(event) {
+        const recommenderNumber = Number(event.target.dataset.recommender);
+        this.updateRecommender(recommenderNumber, {[event.target.dataset.field]: event.detail.value, requestError: ""});
+        this.saveConfirmed = false;
+    }
+
+    /**
+     * Counterpart of "Request Now" in the VF page. The server saves the name and email, sends the email and
+     * records when it was sent; the inputs lock once it has been sent.
+     */
+    async handleRequestRecommendation(event) {
+        const recommenderNumber = Number(event.target.dataset.recommender);
+        const recommender = this.recommenders.find((candidate) => candidate.recommenderNumber === recommenderNumber);
+        if (!recommender) {
+            return;
+        }
+
+        this.updateRecommender(recommenderNumber, {isBusy: true, requestError: ""});
+        try {
+            const result = await requestRecommendation({
+                sid: this.sid,
+                recommenderNumber,
+                name: recommender.name,
+                email: recommender.email
+            });
+
+            if (result.success) {
+                this.updateRecommender(recommenderNumber, {requestedOn: result.requestedOn});
+                this.saveConfirmed = false;
+                this.dispatchEvent(new ShowToastEvent({
+                    title: "Recommendation request sent",
+                    message: `A recommendation request was sent to ${recommender.email.trim()}.`,
+                    variant: "success"
+                }));
+            } else if (result.requestedOn) {
+                // A request was already sent (for example from another tab), so lock it.
+                this.updateRecommender(recommenderNumber, {requestedOn: result.requestedOn});
+            } else if (result.status !== STATUS_OPEN) {
+                this.redirectForStatus(result.status);
+            } else {
+                this.updateRecommender(recommenderNumber, {requestError: result.message});
+            }
+        } catch (error) {
+            this.updateRecommender(recommenderNumber, {requestError: this.reduceError(error)});
+        } finally {
+            this.updateRecommender(recommenderNumber, {isBusy: false});
+        }
+    }
+
+    updateRecommender(recommenderNumber, changes) {
+        this.recommenders = this.recommenders.map((recommender) => {
+            return recommender.recommenderNumber === recommenderNumber ? {...recommender, ...changes} : recommender;
+        });
+        if ("name" in changes) {
+            this.clearSubmitErrors(`recommender:${recommenderNumber}:name`);
+        }
+        if ("email" in changes) {
+            this.clearSubmitErrors(`recommender:${recommenderNumber}:email`);
+        }
+    }
+
+    /**
+     * What Save & Finish Later and Save & Submit send to the server. The parameters are maps of number to text;
+     * see ScholarshipAppPage2LwcController.saveAnswers().
+     *
+     * @returns {{sid: string, answers: Object, essayAnswers: Object, recommenders: Object, signature: (string|undefined)}}
+     *          The initials are only included when the scholarship has a completion statement.
+     */
+    buildSavePayload() {
+        const answers = {};
+        this.questions.forEach((question) => {
+            answers[String(question.questionNumber)] = question.answer;
+        });
+        // Only essays whose text editor is showing are sent, so an essay typed earlier is never
+        // overwritten while the applicant is using the upload option instead.
+        const essayAnswers = {};
+        this.essays.forEach((essay) => {
+            if (!essay.allowUpload || essay.delivery === DELIVERY_INPUT) {
+                essayAnswers[String(essay.essayNumber)] = essay.answerHtml;
+            }
+        });
+        // Recommenders whose request was already sent are locked, so only the others are sent.
+        const recommenders = {};
+        this.recommenders.forEach((recommender) => {
+            if (!recommender.requestedOn) {
+                recommenders[`name${recommender.recommenderNumber}`] = recommender.name;
+                recommenders[`email${recommender.recommenderNumber}`] = recommender.email;
+            }
+        });
+        const payload = {sid: this.sid, answers, essayAnswers, recommenders};
+        if (this.hasCompletionStatement) {
+            payload.signature = this.signature;
+        }
+        return payload;
+    }
+
+    /**
+     * Counterpart of "Save & Submit" (SaveComplete in the VF controller). The application is checked here first,
+     * as the VF page's script did, and again on the server, which then sends any recommender requests still
+     * pending, marks the application complete and sends the confirmation email.
+     */
+    async handleSubmit() {
+        if (this.isSaving) {
+            return;
+        }
         this.saveError = "";
         this.saveConfirmed = false;
+
+        const validation = validateForSubmit({
+            questions: this.questions,
+            essays: this.essays,
+            recommenders: this.recommenders,
+            completionStatementHtml: this.completionStatementHtml,
+            signature: this.signature
+        });
+        this.submitErrors = validation.errors;
+        if (!validation.isValid) {
+            return;
+        }
+
         this.isSaving = true;
         let navigating = false;
         try {
-            // Sent as maps of question/essay number to answer; see ScholarshipAppPage2LwcController.saveAnswers().
-            const answers = {};
-            this.questions.forEach((question) => {
-                answers[String(question.questionNumber)] = question.answer;
-            });
-            // Only essays whose text editor is showing are sent, so an essay typed earlier is never
-            // overwritten while the applicant is using the upload option instead.
-            const essayAnswers = {};
-            this.essays.forEach((essay) => {
-                if (!essay.allowUpload || essay.delivery === DELIVERY_INPUT) {
-                    essayAnswers[String(essay.essayNumber)] = essay.answerHtml;
+            const result = await submitApplication(this.buildSavePayload());
+
+            if (result.success) {
+                if (result.submitEmailFailed) {
+                    this.dispatchEvent(new ShowToastEvent({
+                        title: "Confirmation email not sent",
+                        message: "Your application was submitted, but the confirmation email could not be sent.",
+                        variant: "warning",
+                        mode: "sticky"
+                    }));
                 }
-            });
-            const result = await saveAnswers({sid: this.sid, answers, essayAnswers});
+                this.navigateTo(this.completePageName, true);
+                navigating = true;
+                return;
+            }
+
+            if (result.status !== STATUS_OPEN) {
+                navigating = this.redirectForStatus(result.status);
+                if (navigating) {
+                    return;
+                }
+            }
+            // The server found something the browser check did not: show it on the fields it names.
+            this.submitErrors = errorsFromInvalidFields(result.invalidFields);
+            this.saveError = result.message;
+        } catch (error) {
+            this.saveError = this.reduceError(error);
+        } finally {
+            this.isSaving = navigating;
+        }
+    }
+
+    async handleSaveFinishLater() {
+        if (this.isSaving) {
+            return;
+        }
+        this.saveError = "";
+        this.saveConfirmed = false;
+        this.submitErrors = {};
+        this.isSaving = true;
+        let navigating = false;
+        try {
+            const result = await saveAnswers(this.buildSavePayload());
 
             if (result.success) {
                 this.saveConfirmed = true;

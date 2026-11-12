@@ -1,0 +1,81 @@
+<template>
+    <template lwc:if={isLoading}>
+        <div class="slds-is-relative slds-p-vertical_xx-large">
+            <lightning-spinner alternative-text="Loading"
+                               size="medium"></lightning-spinner>
+        </div>
+    </template>
+
+    <template lwc:if={loadError}>
+        <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert" data-id="load-error">
+            {loadError}
+        </div>
+    </template>
+
+    <template lwc:if={missingRecId}>
+        <div class="slds-p-vertical_small" data-id="missing-rec-id">
+            <p class="slds-text-body_regular">No recommendation request was selected. Please open the link from your recommendation request email.</p>
+        </div>
+    </template>
+
+    <template lwc:if={invalidLink}>
+        <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert" data-id="invalid-link">
+            Could not find this recommendation request. Please use the link from your recommendation request email.
+        </div>
+    </template>
+
+    <template lwc:if={submitted}>
+        <div class="slds-grid slds-wrap" data-id="submitted">
+            <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
+                <h1 class="slds-text-heading_large" data-id="heading">{scholarshipName}</h1>
+            </div>
+            <div class="slds-col slds-size_1-of-1">
+                <p class="slds-text-body_regular" data-id="thank-you">{thankYouText}</p>
+            </div>
+        </div>
+    </template>
+
+    <template lwc:if={hasRequest}>
+        <div class="slds-grid slds-wrap" data-id="request">
+            <div class="slds-col slds-p-vertical_x-small slds-size_1-of-1">
+                <h1 class="slds-text-heading_large" data-id="heading">{scholarshipName}</h1>
+            </div>
+            <div class="slds-col slds-size_1-of-1">
+                <p class="slds-text-body_regular" data-id="greeting">{greeting}</p>
+                <p class="slds-text-body_regular" data-id="request-text">{requestText}</p>
+
+                <template lwc:if={hasDescription}>
+                    <h2 class="slds-text-heading_medium" data-id="description-heading">Scholarship Description</h2>
+                    <lightning-formatted-rich-text value={request.scholarshipDescriptionHtml}></lightning-formatted-rich-text>
+                </template>
+
+                <template lwc:if={hasQuestion}>
+                    <h2 class="slds-text-heading_medium" data-id="question-heading">Your Question</h2>
+                    <lightning-formatted-rich-text value={request.questionHtml}></lightning-formatted-rich-text>
+                </template>
+
+                <div class="slds-p-vertical_small">
+                    <lightning-input-rich-text label="Your recommendation"
+                                               value={recommendation}
+                                               data-id="recommendation"
+                                               onchange={handleRecommendationChange}></lightning-input-rich-text>
+                    <template lwc:if={recommendationError}>
+                        <div class="slds-form-element__help slds-text-color_error" role="alert" data-id="recommendation-error">{recommendationError}</div>
+                    </template>
+                </div>
+
+                <template lwc:if={submitError}>
+                    <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert" data-id="submit-error">
+                        {submitError}
+                    </div>
+                </template>
+
+                <lightning-button variant="brand"
+                                  label="Submit"
+                                  data-id="submit"
+                                  disabled={isSaving}
+                                  onclick={handleSubmit}></lightning-button>
+            </div>
+        </div>
+    </template>
+</template>

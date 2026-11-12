@@ -5,6 +5,8 @@ import getPageData from "@salesforce/apex/ScholarshipAppPage2LwcController.getPa
 import saveAnswers from "@salesforce/apex/ScholarshipAppPage2LwcController.saveAnswers";
 import attachEssayFile from "@salesforce/apex/ScholarshipAppPage2LwcController.attachEssayFile";
 import deleteEssayFile from "@salesforce/apex/ScholarshipAppPage2LwcController.deleteEssayFile";
+import requestRecommendation from "@salesforce/apex/ScholarshipAppPage2LwcController.requestRecommendation";
+import submitApplication from "@salesforce/apex/ScholarshipAppPage2LwcController.submitApplication";
 
 // Replace the navigation stub with one that records Navigate calls.
 jest.mock("lightning/navigation", () => {
@@ -28,6 +30,8 @@ jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.getPageData", () =>
 jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.saveAnswers", () => ({default: jest.fn()}), {virtual: true});
 jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.attachEssayFile", () => ({default: jest.fn()}), {virtual: true});
 jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.deleteEssayFile", () => ({default: jest.fn()}), {virtual: true});
+jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.requestRecommendation", () => ({default: jest.fn()}), {virtual: true});
+jest.mock("@salesforce/apex/ScholarshipAppPage2LwcController.submitApplication", () => ({default: jest.fn()}), {virtual: true});
 
 const {__mockNavigate: mockNavigate} = require("lightning/navigation");
 
@@ -48,6 +52,7 @@ const openData = (overrides = {}) => ({
     allowedFileExtensions: [".pdf", ".doc", ".docx", ".txt", ".rtf"],
     questions: [question(1), question(3)],
     essays: [],
+    recommenders: [],
     ...overrides
 });
 
@@ -72,6 +77,11 @@ function typeAnswer(element, questionNumber, value) {
 
 async function clickButton(element, id) {
     q(element, `lightning-button[data-id="${id}"]`).click();
+    await flushPromises();
+}
+
+async function clickRecommenderRequest(element, recommenderNumber) {
+    q(element, `lightning-button[data-id="recommender-request"][data-recommender="${recommenderNumber}"]`).click();
     await flushPromises();
 }
 
@@ -225,7 +235,8 @@ describe("c-scholarship-app-page2-lwc", () => {
             expect(saveAnswers).toHaveBeenCalledWith({
                 sid: SID,
                 answers: {1: "First answer", 3: null},
-                essayAnswers: {}
+                essayAnswers: {},
+                recommenders: {}
             });
             const confirmation = q(element, '[data-id="save-confirmation"]');
             expect(confirmation.textContent).toContain("Saved:");
@@ -628,7 +639,8 @@ describe("c-scholarship-app-page2-lwc", () => {
                 expect(saveAnswers).toHaveBeenCalledWith({
                     sid: SID,
                     answers: {1: "Short answer"},
-                    essayAnswers: {1: "<p>First essay</p>", 2: "<p>Second essay</p>"}
+                    essayAnswers: {1: "<p>First essay</p>", 2: "<p>Second essay</p>"},
+                    recommenders: {}
                 });
             });
 
@@ -643,7 +655,7 @@ describe("c-scholarship-app-page2-lwc", () => {
 
                 await clickButton(element, "save-finish-later");
 
-                expect(saveAnswers).toHaveBeenCalledWith({sid: SID, answers: {}, essayAnswers: {}});
+                expect(saveAnswers).toHaveBeenCalledWith({sid: SID, answers: {}, essayAnswers: {}, recommenders: {}});
             });
 
             it("includes a typed essay for an essay that allows upload when typing was chosen", async () => {
@@ -655,7 +667,7 @@ describe("c-scholarship-app-page2-lwc", () => {
 
                 await clickButton(element, "save-finish-later");
 
-                expect(saveAnswers).toHaveBeenCalledWith({sid: SID, answers: {}, essayAnswers: {1: "<p>Pasted essay</p>"}});
+                expect(saveAnswers).toHaveBeenCalledWith({sid: SID, answers: {}, essayAnswers: {1: "<p>Pasted essay</p>"}, recommenders: {}});
             });
 
             it("hides the saved confirmation once an essay is edited", async () => {
@@ -668,6 +680,749 @@ describe("c-scholarship-app-page2-lwc", () => {
                 await flushPromises();
 
                 expect(q(element, '[data-id="save-confirmation"]')).toBeNull();
+            });
+        });
+    });
+
+    describe("recommenders", () => {
+        const recommender = (recommenderNumber, overrides = {}) => ({
+            recommenderNumber,
+            required: false,
+            descriptionHtml: `<p>Recommender ${recommenderNumber} description</p>`,
+            name: null,
+            email: null,
+            requestedOn: null,
+            ...overrides
+        });
+
+        const recommenderData = (recommenders) => openData({questions: [], recommenders});
+
+        const nameInput = (element, number) => q(element, `lightning-input[data-recommender="${number}"][data-field="name"]`);
+        const emailInput = (element, number) => q(element, `lightning-input[data-recommender="${number}"][data-field="email"]`);
+        const requestButton = (element, number) => q(element, `lightning-button[data-id="recommender-request"][data-recommender="${number}"]`);
+
+        function typeRecommender(element, number, field, value) {
+            q(element, `lightning-input[data-recommender="${number}"][data-field="${field}"]`)
+                .dispatchEvent(new CustomEvent("change", {detail: {value}}));
+        }
+
+        async function fillIn(element, number, name = "Dr One", email = "one@example.com") {
+            typeRecommender(element, number, "name", name);
+            typeRecommender(element, number, "email", email);
+            await flushPromises();
+        }
+
+        describe("which controls show", () => {
+            it("shows nothing when the scholarship asks for no recommenders", async () => {
+                const element = await mountWith(recommenderData([]));
+
+                expect(qAll(element, '[data-id="recommender"]')).toHaveLength(0);
+            });
+
+            it("numbers the headings and marks optional recommenders", async () => {
+                const element = await mountWith(recommenderData([recommender(1, {required: true}), recommender(2)]));
+
+                expect(qAll(element, '[data-id="recommender-heading"]').map((heading) => heading.textContent))
+                    .toEqual(["Recommendation 1", "Recommendation 2 (Optional)"]);
+            });
+
+            it("shows only the recommenders the scholarship asks for", async () => {
+                const element = await mountWith(recommenderData([recommender(2, {required: true})]));
+
+                expect(nameInput(element, 1)).toBeNull();
+                expect(nameInput(element, 2)).not.toBeNull();
+                expect(q(element, '[data-id="recommender-heading"]').textContent).toBe("Recommendation 2");
+            });
+
+            it("shows the description, and skips it when there is none", async () => {
+                const element = await mountWith(recommenderData([recommender(1), recommender(2, {descriptionHtml: null})]));
+
+                const sections = qAll(element, '[data-id="recommender"]');
+                expect(sections[0].querySelector("lightning-formatted-rich-text")).not.toBeNull();
+                expect(sections[1].querySelector("lightning-formatted-rich-text")).toBeNull();
+            });
+
+            it("fills in the saved name and email", async () => {
+                const element = await mountWith(recommenderData([recommender(1, {name: "Dr One", email: "one@example.com"})]));
+
+                expect(nameInput(element, 1).value).toBe("Dr One");
+                expect(emailInput(element, 1).value).toBe("one@example.com");
+                expect(nameInput(element, 1).disabled).toBeFalsy();
+                expect(emailInput(element, 1).disabled).toBeFalsy();
+            });
+
+            it("limits the name to the field length", async () => {
+                const element = await mountWith(recommenderData([recommender(1)]));
+
+                expect(String(nameInput(element, 1).maxLength)).toBe("80");
+            });
+        });
+
+        describe("Request Now is only enabled for a name and a valid email", () => {
+            it("is disabled while the fields are empty", async () => {
+                const element = await mountWith(recommenderData([recommender(1)]));
+
+                expect(requestButton(element, 1).disabled).toBe(true);
+            });
+
+            it("stays disabled with a name but no email, or an invalid email", async () => {
+                const element = await mountWith(recommenderData([recommender(1)]));
+
+                typeRecommender(element, 1, "name", "Dr One");
+                await flushPromises();
+                expect(requestButton(element, 1).disabled).toBe(true);
+
+                typeRecommender(element, 1, "email", "not an email");
+                await flushPromises();
+                expect(requestButton(element, 1).disabled).toBe(true);
+            });
+
+            it("stays disabled with a valid email but a blank name", async () => {
+                const element = await mountWith(recommenderData([recommender(1)]));
+
+                await fillIn(element, 1, "   ", "one@example.com");
+
+                expect(requestButton(element, 1).disabled).toBe(true);
+            });
+
+            it("is enabled once both are valid, and is checked per recommender", async () => {
+                const element = await mountWith(recommenderData([recommender(1), recommender(2)]));
+
+                await fillIn(element, 1);
+
+                expect(requestButton(element, 1).disabled).toBe(false);
+                expect(requestButton(element, 2).disabled).toBe(true);
+            });
+
+            it("is already enabled when valid values were saved earlier", async () => {
+                const element = await mountWith(recommenderData([recommender(1, {name: "Dr One", email: "one@example.com"})]));
+
+                expect(requestButton(element, 1).disabled).toBe(false);
+            });
+        });
+
+        describe("after the request was sent", () => {
+            const sent = () => recommender(1, {name: "Dr One", email: "one@example.com", requestedOn: "May 3, 2026 02:15 PM"});
+
+            it("shows when it was sent and removes the Request Now button", async () => {
+                const element = await mountWith(recommenderData([sent()]));
+
+                expect(q(element, '[data-id="recommender-sent"]').textContent).toBe("Recommendation request sent on May 3, 2026 02:15 PM.");
+                expect(requestButton(element, 1)).toBeNull();
+            });
+
+            it("disables the name and email", async () => {
+                const element = await mountWith(recommenderData([sent()]));
+
+                expect(nameInput(element, 1).disabled).toBe(true);
+                expect(emailInput(element, 1).disabled).toBe(true);
+            });
+
+            it("leaves the other recommender editable", async () => {
+                const element = await mountWith(recommenderData([sent(), recommender(2)]));
+
+                expect(nameInput(element, 2).disabled).toBeFalsy();
+                expect(requestButton(element, 2)).not.toBeNull();
+            });
+        });
+
+        describe("clicking Request Now", () => {
+            it("sends the typed name and email for that recommender", async () => {
+                requestRecommendation.mockResolvedValue({success: true, status: "OPEN", requestedOn: "May 3, 2026 02:15 PM"});
+                const element = await mountWith(recommenderData([recommender(1), recommender(2)]));
+                await fillIn(element, 2, "Prof Two", "two@example.com");
+
+                await clickRecommenderRequest(element, 2);
+
+                expect(requestRecommendation).toHaveBeenCalledTimes(1);
+                expect(requestRecommendation).toHaveBeenCalledWith({
+                    sid: SID,
+                    recommenderNumber: 2,
+                    name: "Prof Two",
+                    email: "two@example.com"
+                });
+            });
+
+            it("locks the recommender and shows the sent date when the server sends the request", async () => {
+                requestRecommendation.mockResolvedValue({success: true, status: "OPEN", requestedOn: "May 3, 2026 02:15 PM"});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await fillIn(element, 1);
+
+                await clickRecommenderRequest(element, 1);
+
+                expect(q(element, '[data-id="recommender-sent"]').textContent).toBe("Recommendation request sent on May 3, 2026 02:15 PM.");
+                expect(requestButton(element, 1)).toBeNull();
+                expect(nameInput(element, 1).disabled).toBe(true);
+                expect(emailInput(element, 1).disabled).toBe(true);
+                expect(q(element, '[data-id="recommender-error"]')).toBeNull();
+            });
+
+            it("shows a success toast naming the recipient", async () => {
+                requestRecommendation.mockResolvedValue({success: true, status: "OPEN", requestedOn: "May 3, 2026 02:15 PM"});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                const toastHandler = jest.fn();
+                element.addEventListener("lightning__showtoast", toastHandler);
+                await fillIn(element, 1, "Dr One", " one@example.com ");
+
+                await clickRecommenderRequest(element, 1);
+
+                expect(toastHandler).toHaveBeenCalledTimes(1);
+                const toast = toastHandler.mock.calls[0][0].detail;
+                expect(toast.variant).toBe("success");
+                expect(toast.title).toBe("Recommendation request sent");
+                expect(toast.message).toBe("A recommendation request was sent to one@example.com.");
+            });
+
+            it("does not save the rest of the application", async () => {
+                requestRecommendation.mockResolvedValue({success: true, status: "OPEN", requestedOn: "May 3, 2026 02:15 PM"});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await fillIn(element, 1);
+
+                await clickRecommenderRequest(element, 1);
+
+                expect(saveAnswers).not.toHaveBeenCalled();
+            });
+
+            it("shows the server's message and keeps the form usable when the email was not sent", async () => {
+                requestRecommendation.mockResolvedValue({success: false, status: "OPEN", message: "Recommendation saved. No request email sent."});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                const toastHandler = jest.fn();
+                element.addEventListener("lightning__showtoast", toastHandler);
+                await fillIn(element, 1);
+
+                await clickRecommenderRequest(element, 1);
+
+                expect(q(element, '[data-id="recommender-error"]').textContent).toBe("Recommendation saved. No request email sent.");
+                expect(requestButton(element, 1)).not.toBeNull();
+                expect(requestButton(element, 1).disabled).toBe(false);
+                expect(nameInput(element, 1).disabled).toBeFalsy();
+                expect(q(element, '[data-id="recommender-sent"]')).toBeNull();
+                expect(toastHandler).not.toHaveBeenCalled();
+            });
+
+            it("clears the error once the applicant edits the recommender", async () => {
+                requestRecommendation.mockResolvedValue({success: false, status: "OPEN", message: "Some failure"});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await fillIn(element, 1);
+                await clickRecommenderRequest(element, 1);
+                expect(q(element, '[data-id="recommender-error"]')).not.toBeNull();
+
+                typeRecommender(element, 1, "email", "other@example.com");
+                await flushPromises();
+
+                expect(q(element, '[data-id="recommender-error"]')).toBeNull();
+            });
+
+            it("locks the recommender when the server says a request was already sent", async () => {
+                requestRecommendation.mockResolvedValue({
+                    success: false,
+                    status: "OPEN",
+                    message: "A request has already been sent for this recommendation.",
+                    requestedOn: "May 1, 2026 09:00 AM"
+                });
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await fillIn(element, 1);
+
+                await clickRecommenderRequest(element, 1);
+
+                expect(q(element, '[data-id="recommender-sent"]').textContent).toBe("Recommendation request sent on May 1, 2026 09:00 AM.");
+                expect(requestButton(element, 1)).toBeNull();
+            });
+
+            it("redirects when the scholarship closed", async () => {
+                requestRecommendation.mockResolvedValue({success: false, status: "CLOSED", message: "closed"});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await fillIn(element, 1);
+
+                await clickRecommenderRequest(element, 1);
+
+                expect(mockNavigate.mock.calls[0][0].attributes.name).toBe("Scholarship_Closed_Lwc__c");
+            });
+
+            it("shows an error when the Apex call throws", async () => {
+                requestRecommendation.mockRejectedValue({body: {message: "Server exploded"}});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await fillIn(element, 1);
+
+                await clickRecommenderRequest(element, 1);
+
+                expect(q(element, '[data-id="recommender-error"]').textContent).toContain("Server exploded");
+                expect(requestButton(element, 1)).not.toBeNull();
+            });
+
+            it("disables the button while the request is in progress so it cannot be sent twice", async () => {
+                let finish;
+                requestRecommendation.mockReturnValue(new Promise((resolve) => {
+                    finish = resolve;
+                }));
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await fillIn(element, 1);
+
+                requestButton(element, 1).click();
+                await flushPromises();
+                expect(requestButton(element, 1).disabled).toBe(true);
+
+                finish({success: true, status: "OPEN", requestedOn: "May 3, 2026 02:15 PM"});
+                await flushPromises();
+                expect(requestRecommendation).toHaveBeenCalledTimes(1);
+                expect(q(element, '[data-id="recommender-sent"]')).not.toBeNull();
+            });
+        });
+
+        describe("Save & Finish Later with recommenders", () => {
+            it("sends the typed names and emails of recommenders not yet requested", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(recommenderData([recommender(1), recommender(2)]));
+                await fillIn(element, 1, "Dr One", "one@example.com");
+                typeRecommender(element, 2, "name", "Prof Two");
+                await flushPromises();
+
+                await clickButton(element, "save-finish-later");
+
+                expect(saveAnswers).toHaveBeenCalledWith({
+                    sid: SID,
+                    answers: {},
+                    essayAnswers: {},
+                    recommenders: {name1: "Dr One", email1: "one@example.com", name2: "Prof Two", email2: ""}
+                });
+            });
+
+            it("leaves out a recommender whose request was already sent", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(recommenderData([
+                    recommender(1, {name: "Dr One", email: "one@example.com", requestedOn: "May 3, 2026 02:15 PM"}),
+                    recommender(2)
+                ]));
+                await fillIn(element, 2, "Prof Two", "two@example.com");
+
+                await clickButton(element, "save-finish-later");
+
+                expect(saveAnswers).toHaveBeenCalledWith({
+                    sid: SID,
+                    answers: {},
+                    essayAnswers: {},
+                    recommenders: {name2: "Prof Two", email2: "two@example.com"}
+                });
+            });
+
+            it("does not send a recommendation request", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await fillIn(element, 1);
+
+                await clickButton(element, "save-finish-later");
+
+                expect(requestRecommendation).not.toHaveBeenCalled();
+            });
+
+            it("shows the server message when a recommender's value is rejected", async () => {
+                saveAnswers.mockResolvedValue({success: false, status: "OPEN", message: "Please enter a valid email address for recommendation 1."});
+                const element = await mountWith(recommenderData([recommender(1)]));
+
+                await clickButton(element, "save-finish-later");
+
+                expect(q(element, '[data-id="save-error"]').textContent).toContain("recommendation 1");
+            });
+
+            it("hides the saved confirmation once a recommender field is edited", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(recommenderData([recommender(1)]));
+                await clickButton(element, "save-finish-later");
+                expect(q(element, '[data-id="save-confirmation"]')).not.toBeNull();
+
+                typeRecommender(element, 1, "name", "Dr One");
+                await flushPromises();
+
+                expect(q(element, '[data-id="save-confirmation"]')).toBeNull();
+            });
+        });
+    });
+
+    describe("Save & Submit", () => {
+        const COMPLETE_PAGE = {type: "comm__namedPage", attributes: {name: "Scholarship_Application_Complete_Lwc__c"}, state: {sid: SID}};
+
+        const submitButton = (element) => q(element, 'lightning-button[data-id="save-submit"]');
+        const signatureInput = (element) => q(element, 'lightning-input[data-id="signature"]');
+        const richTextField = (element, number) => q(element, `lightning-input-rich-text[data-essay="${number}"]`);
+
+        async function clickSubmit(element) {
+            submitButton(element).click();
+            await flushPromises();
+        }
+
+        function typeAnswerFor(element, number, value) {
+            q(element, `lightning-textarea[data-question="${number}"]`).dispatchEvent(new CustomEvent("change", {detail: {value}}));
+        }
+
+        function typeInitials(element, value) {
+            signatureInput(element).dispatchEvent(new CustomEvent("change", {detail: {value}}));
+        }
+
+        function typeRecommenderField(element, number, field, value) {
+            q(element, `lightning-input[data-recommender="${number}"][data-field="${field}"]`)
+                .dispatchEvent(new CustomEvent("change", {detail: {value}}));
+        }
+
+        function chooseDeliveryFor(element, number, value) {
+            q(element, `lightning-combobox[data-essay="${number}"]`).dispatchEvent(new CustomEvent("change", {detail: {value}}));
+        }
+
+        const uploadableEssay = (overrides = {}) => ({
+            essayNumber: 1,
+            promptHtml: "<p>Essay 1</p>",
+            allowUpload: true,
+            answerHtml: null,
+            uploaded: false,
+            uploadedFilename: null,
+            ...overrides
+        });
+
+        const requiredRecommender = (overrides = {}) => ({
+            recommenderNumber: 1,
+            required: true,
+            descriptionHtml: null,
+            name: null,
+            email: null,
+            requestedOn: null,
+            ...overrides
+        });
+
+        const emptyApplication = () => openData({questions: []});
+
+        beforeEach(() => {
+            submitApplication.mockResolvedValue({success: true, status: "OPEN", submitEmailFailed: false, invalidFields: []});
+        });
+
+        describe("the controls", () => {
+            it("shows the Save & Submit button and the note about recommendation requests", async () => {
+                const element = await mountWith(emptyApplication());
+
+                expect(submitButton(element).label).toBe("Save & Submit");
+                expect(q(element, '[data-id="submit-note"]').textContent).toBe("Save & Submit will send any unsent recommendation requests.");
+            });
+
+            it("shows the completion statement and the initials only when the scholarship has a statement", async () => {
+                const withStatement = await mountWith(openData({questions: [], completionStatementHtml: "<p>I agree</p>", signature: "AB"}));
+                expect(q(withStatement, '[data-id="completion"]')).not.toBeNull();
+                expect(q(withStatement, '[data-id="completion"] h2').textContent).toBe("Digital Consent & Submit");
+                expect(signatureInput(withStatement).label).toBe("By initialing here you agree to the above statement.");
+                expect(signatureInput(withStatement).value).toBe("AB");
+                expect(String(signatureInput(withStatement).maxLength)).toBe("30");
+                document.body.removeChild(withStatement);
+
+                const without = await mountWith(emptyApplication());
+                expect(q(without, '[data-id="completion"]')).toBeNull();
+            });
+        });
+
+        describe("Save & Finish Later and the initials", () => {
+            it("sends the initials when there is a completion statement", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(openData({questions: [], completionStatementHtml: "<p>I agree</p>"}));
+                typeInitials(element, "AB");
+                await flushPromises();
+
+                await clickButton(element, "save-finish-later");
+
+                expect(saveAnswers).toHaveBeenCalledWith({sid: SID, answers: {}, essayAnswers: {}, recommenders: {}, signature: "AB"});
+            });
+
+            it("does not send initials when there is no completion statement", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(emptyApplication());
+
+                await clickButton(element, "save-finish-later");
+
+                expect(Object.keys(saveAnswers.mock.calls[0][0])).not.toContain("signature");
+            });
+
+            it("does not ask for anything to be submitted", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(emptyApplication());
+
+                await clickButton(element, "save-finish-later");
+
+                expect(submitApplication).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("when the application is complete", () => {
+            it("submits and goes to the Complete page with the sid", async () => {
+                const element = await mountWith(emptyApplication());
+
+                await clickSubmit(element);
+
+                expect(submitApplication).toHaveBeenCalledTimes(1);
+                expect(mockNavigate).toHaveBeenCalledWith(COMPLETE_PAGE, true);
+            });
+
+            it("sends everything the application holds, as Save & Finish Later does", async () => {
+                const element = await mountWith(openData({
+                    questions: [question(1)],
+                    essays: [uploadableEssay({uploaded: true, uploadedFilename: "essay.pdf"}), uploadableEssay({essayNumber: 2, allowUpload: false})],
+                    recommenders: [requiredRecommender({name: "Dr One", email: "one@example.com"})],
+                    completionStatementHtml: "<p>I agree</p>"
+                }));
+                typeAnswerFor(element, 1, "My answer");
+                richTextField(element, 2).dispatchEvent(new CustomEvent("change", {detail: {value: "<p>Typed essay</p>"}}));
+                typeInitials(element, "AB");
+                await flushPromises();
+
+                await clickSubmit(element);
+
+                expect(submitApplication).toHaveBeenCalledWith({
+                    sid: SID,
+                    answers: {1: "My answer"},
+                    essayAnswers: {2: "<p>Typed essay</p>"},
+                    recommenders: {name1: "Dr One", email1: "one@example.com"},
+                    signature: "AB"
+                });
+                expect(mockNavigate).toHaveBeenCalledWith(COMPLETE_PAGE, true);
+            });
+
+            it("leaves out a recommender whose request was already sent", async () => {
+                const element = await mountWith(openData({
+                    questions: [],
+                    recommenders: [requiredRecommender({name: "Dr One", email: "one@example.com", requestedOn: "May 3, 2026 02:15 PM"})]
+                }));
+
+                await clickSubmit(element);
+
+                expect(submitApplication.mock.calls[0][0].recommenders).toEqual({});
+                expect(mockNavigate).toHaveBeenCalledWith(COMPLETE_PAGE, true);
+            });
+
+            it("shows no toast when everything worked", async () => {
+                const element = await mountWith(emptyApplication());
+                const toastHandler = jest.fn();
+                element.addEventListener("lightning__showtoast", toastHandler);
+
+                await clickSubmit(element);
+
+                expect(toastHandler).not.toHaveBeenCalled();
+            });
+
+            it("shows a sticky warning toast, and still goes on, when the confirmation email was not sent", async () => {
+                submitApplication.mockResolvedValue({success: true, status: "OPEN", submitEmailFailed: true, invalidFields: []});
+                const element = await mountWith(emptyApplication());
+                const toastHandler = jest.fn();
+                element.addEventListener("lightning__showtoast", toastHandler);
+
+                await clickSubmit(element);
+
+                expect(toastHandler).toHaveBeenCalledTimes(1);
+                const toast = toastHandler.mock.calls[0][0].detail;
+                expect(toast.variant).toBe("warning");
+                expect(toast.mode).toBe("sticky");
+                expect(toast.message).toBe("Your application was submitted, but the confirmation email could not be sent.");
+                expect(mockNavigate).toHaveBeenCalledWith(COMPLETE_PAGE, true);
+            });
+
+            it("keeps the button disabled while submitting, so it cannot be sent twice", async () => {
+                let finish;
+                submitApplication.mockReturnValue(new Promise((resolve) => {
+                    finish = resolve;
+                }));
+                const element = await mountWith(emptyApplication());
+
+                submitButton(element).click();
+                await flushPromises();
+                expect(submitButton(element).disabled).toBe(true);
+                submitButton(element).click();
+                await flushPromises();
+
+                finish({success: true, status: "OPEN", invalidFields: []});
+                await flushPromises();
+                expect(submitApplication).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe("when something is missing, found in the browser", () => {
+            it("does not call the server, and shows what is missing", async () => {
+                const element = await mountWith(openData({questions: [question(1), question(3)]}));
+                typeAnswerFor(element, 3, "Answered");
+                await flushPromises();
+
+                await clickSubmit(element);
+
+                expect(submitApplication).not.toHaveBeenCalled();
+                expect(mockNavigate).not.toHaveBeenCalled();
+                const errors = qAll(element, '[data-id="question-error"]');
+                expect(errors).toHaveLength(1);
+                expect(errors[0].textContent).toBe("This field is required.");
+                expect(q(element, '[data-id="submit-summary"]').textContent).toContain("Please complete the required fields shown above before submitting.");
+            });
+
+            it("asks for the essay option, then for what the chosen option needs", async () => {
+                const element = await mountWith(openData({questions: [], essays: [uploadableEssay()]}));
+
+                await clickSubmit(element);
+                expect(q(element, '[data-id="essay-error"]').textContent).toBe("Please choose how you will enter your answer.");
+
+                chooseDeliveryFor(element, 1, "upload");
+                await flushPromises();
+                expect(q(element, '[data-id="essay-error"]')).toBeNull();
+                await clickSubmit(element);
+                expect(q(element, '[data-id="essay-error"]').textContent).toBe("Please upload your essay file.");
+
+                chooseDeliveryFor(element, 1, "input");
+                await flushPromises();
+                await clickSubmit(element);
+                expect(q(element, '[data-id="essay-error"]').textContent).toBe("Please enter your essay.");
+                expect(submitApplication).not.toHaveBeenCalled();
+            });
+
+            it("does not require an essay that can only be typed", async () => {
+                const element = await mountWith(openData({questions: [], essays: [uploadableEssay({allowUpload: false})]}));
+
+                await clickSubmit(element);
+
+                expect(q(element, '[data-id="essay-error"]')).toBeNull();
+                expect(submitApplication).toHaveBeenCalledTimes(1);
+            });
+
+            it("asks for a required recommender's name and a valid email, but not an optional one's", async () => {
+                const element = await mountWith(openData({
+                    questions: [],
+                    recommenders: [requiredRecommender(), requiredRecommender({recommenderNumber: 2, required: false})]
+                }));
+
+                await clickSubmit(element);
+
+                expect(qAll(element, '[data-id="recommender-name-error"]')).toHaveLength(1);
+                expect(qAll(element, '[data-id="recommender-email-error"]')).toHaveLength(1);
+                expect(q(element, '[data-id="recommender-name-error"]').textContent).toBe("This field is required.");
+
+                typeRecommenderField(element, 1, "name", "Dr One");
+                typeRecommenderField(element, 1, "email", "not an email");
+                await flushPromises();
+                await clickSubmit(element);
+                expect(q(element, '[data-id="recommender-name-error"]')).toBeNull();
+                expect(q(element, '[data-id="recommender-email-error"]').textContent).toBe("Please enter a valid email address.");
+                expect(submitApplication).not.toHaveBeenCalled();
+            });
+
+            it("asks for the initials when there is a completion statement", async () => {
+                const element = await mountWith(openData({questions: [], completionStatementHtml: "<p>I agree</p>"}));
+
+                await clickSubmit(element);
+
+                expect(q(element, '[data-id="signature-error"]').textContent).toBe("This field is required.");
+                expect(submitApplication).not.toHaveBeenCalled();
+            });
+
+            it("clears each problem as soon as that field is fixed, and the summary with the last one", async () => {
+                const element = await mountWith(openData({
+                    questions: [question(1)],
+                    recommenders: [requiredRecommender()],
+                    completionStatementHtml: "<p>I agree</p>"
+                }));
+                await clickSubmit(element);
+                expect(q(element, '[data-id="submit-summary"]')).not.toBeNull();
+
+                typeAnswerFor(element, 1, "Answer");
+                typeRecommenderField(element, 1, "name", "Dr One");
+                typeRecommenderField(element, 1, "email", "one@example.com");
+                await flushPromises();
+                expect(q(element, '[data-id="question-error"]')).toBeNull();
+                expect(q(element, '[data-id="recommender-name-error"]')).toBeNull();
+                expect(q(element, '[data-id="recommender-email-error"]')).toBeNull();
+                expect(q(element, '[data-id="signature-error"]')).not.toBeNull();
+                expect(q(element, '[data-id="submit-summary"]')).not.toBeNull();
+
+                typeInitials(element, "AB");
+                await flushPromises();
+                expect(q(element, '[data-id="signature-error"]')).toBeNull();
+                expect(q(element, '[data-id="submit-summary"]')).toBeNull();
+            });
+
+            it("submits once everything is filled in", async () => {
+                const element = await mountWith(openData({questions: [question(1)], completionStatementHtml: "<p>I agree</p>"}));
+                await clickSubmit(element);
+                expect(submitApplication).not.toHaveBeenCalled();
+
+                typeAnswerFor(element, 1, "Answer");
+                typeInitials(element, "AB");
+                await flushPromises();
+                await clickSubmit(element);
+
+                expect(submitApplication).toHaveBeenCalledTimes(1);
+                expect(mockNavigate).toHaveBeenCalledWith(COMPLETE_PAGE, true);
+            });
+
+            it("drops the old problems when Save & Finish Later is used", async () => {
+                saveAnswers.mockResolvedValue({success: true, status: "OPEN"});
+                const element = await mountWith(openData({questions: [question(1)]}));
+                await clickSubmit(element);
+                expect(q(element, '[data-id="question-error"]')).not.toBeNull();
+
+                await clickButton(element, "save-finish-later");
+
+                expect(q(element, '[data-id="question-error"]')).toBeNull();
+                expect(q(element, '[data-id="submit-summary"]')).toBeNull();
+            });
+        });
+
+        describe("when the server says no", () => {
+            it("shows the fields the server named, with its message, and stays on the page", async () => {
+                submitApplication.mockResolvedValue({
+                    success: false,
+                    status: "OPEN",
+                    message: "Please answer question 1. Essay 1 needs an uploaded file or a typed answer.",
+                    invalidFields: ["question:1", "essay:1"]
+                });
+                // The browser check passes here (the essay option chosen has what it needs), so only the server objects.
+                const element = await mountWith(openData({questions: [question(1, {answer: "Looks answered"})], essays: [uploadableEssay({answerHtml: "<p>Text</p>"})]}));
+
+                await clickSubmit(element);
+
+                expect(submitApplication).toHaveBeenCalledTimes(1);
+                expect(q(element, '[data-id="question-error"]').textContent).toBe("This field is required.");
+                expect(q(element, '[data-id="essay-error"]').textContent).toBe("Please upload your essay file or enter your essay.");
+                expect(q(element, '[data-id="save-error"]').textContent).toContain("Please answer question 1.");
+                expect(mockNavigate).not.toHaveBeenCalled();
+                expect(submitButton(element).disabled).toBeFalsy();
+            });
+
+            it("shows a message with no field, for example when a recommender request could not be sent", async () => {
+                submitApplication.mockResolvedValue({
+                    success: false,
+                    status: "OPEN",
+                    message: "Recommendation saved. No request email sent. Your application has not been submitted.",
+                    invalidFields: []
+                });
+                const element = await mountWith(emptyApplication());
+
+                await clickSubmit(element);
+
+                expect(q(element, '[data-id="save-error"]').textContent).toContain("has not been submitted");
+                expect(q(element, '[data-id="submit-summary"]')).toBeNull();
+                expect(mockNavigate).not.toHaveBeenCalled();
+            });
+
+            it.each([
+                ["CLOSED", "Scholarship_Closed_Lwc__c"],
+                ["NOT_YET_OPEN", "Scholarship_Closed_Lwc__c"],
+                ["COMPLETE", "Scholarship_Application_Complete_Lwc__c"],
+                ["CRITERIA_REQUIRED", "Scholarship_Application_Page_Lwc_1__c"]
+            ])("redirects when the status is %s", async (status, pageName) => {
+                submitApplication.mockResolvedValue({success: false, status, message: "x", invalidFields: []});
+                const element = await mountWith(emptyApplication());
+
+                await clickSubmit(element);
+
+                expect(mockNavigate.mock.calls[0][0].attributes.name).toBe(pageName);
+            });
+
+            it("shows an error, and lets the applicant try again, when the Apex call throws", async () => {
+                submitApplication.mockRejectedValue({body: {message: "Server exploded"}});
+                const element = await mountWith(emptyApplication());
+
+                await clickSubmit(element);
+
+                expect(q(element, '[data-id="save-error"]').textContent).toContain("Server exploded");
+                expect(mockNavigate).not.toHaveBeenCalled();
+                expect(submitButton(element).disabled).toBeFalsy();
             });
         });
     });
